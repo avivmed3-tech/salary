@@ -1035,11 +1035,197 @@
     font-size: 12px;
     font-weight: 700;
   }
+
+  /* Pull to refresh indicator */
+  .ptr-indicator {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 150;
+    transition: top 0.3s ease, transform 0.3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .ptr-indicator.visible { top: 80px; }
+  .ptr-indicator.loading { animation: ptrSpin 0.8s linear infinite; }
+  @keyframes ptrSpin { to { transform: translateX(-50%) rotate(360deg); } }
+
+  /* Donut chart for dashboard */
+  .donut-container {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 16px;
+  }
+  .donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-center-val {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -1px;
+  }
+  .donut-center-label {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 600;
+  }
+
+  /* Salary change indicator */
+  .salary-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .salary-change.up { background: rgba(34,209,122,0.15); color: var(--green); }
+  .salary-change.down { background: rgba(239,68,68,0.15); color: var(--red); }
+  .salary-change.same { background: var(--surface3); color: var(--text3); }
+
+  /* Splash Screen */
+  .splash-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, #0d0f14 0%, #161923 50%, #0d0f14 100%);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease;
+  }
+  .splash-screen.hide { opacity: 0; pointer-events: none; }
+  .splash-logo {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    margin-bottom: 16px;
+    animation: splashPulse 1.5s ease infinite;
+    box-shadow: 0 8px 40px rgba(79,142,247,0.4);
+  }
+  @keyframes splashPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 8px 40px rgba(79,142,247,0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 12px 50px rgba(79,142,247,0.6); }
+  }
+  .splash-title {
+    font-size: 26px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .splash-sub {
+    font-size: 13px;
+    color: var(--text3);
+    font-weight: 400;
+  }
+  .splash-loader {
+    margin-top: 32px;
+    width: 120px;
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .splash-loader-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: splashLoad 1.2s ease forwards;
+  }
+  @keyframes splashLoad {
+    0% { width: 0%; }
+    60% { width: 80%; }
+    100% { width: 100%; }
+  }
+  body.light-mode .splash-screen { background: linear-gradient(180deg, #f0f4fa 0%, #fff 50%, #f0f4fa 100%); }
+
+  /* What's New modal */
+  .whats-new-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .whats-new-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px;
+    max-width: 380px;
+    width: 100%;
+    animation: fadeUp 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .wn-feature {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .wn-feature:last-child { border-bottom: none; }
+  .wn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .wn-text { flex: 1; }
+  .wn-title { font-size: 13px; font-weight: 800; color: var(--text); }
+  .wn-desc { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
 </style>
 </head>
 <body>
 
+<!-- Splash Screen -->
+<div class="splash-screen" id="splashScreen">
+  <div class="splash-logo">💼</div>
+  <div class="splash-title">מחשבון שכר</div>
+  <div class="splash-sub">חישוב שכר מקצועי · ישראל 2026</div>
+  <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+</div>
+
 <div class="app">
+  <!-- Pull to Refresh Indicator -->
+  <div class="ptr-indicator" id="ptrIndicator">↻</div>
+
   <div class="header">
     <div class="header-logo">
       <div class="header-icon">💼</div>
@@ -1070,17 +1256,13 @@
         <div class="section-icon" style="background:rgba(79,142,247,0.15)">💰</div>
         <div>
           <div class="section-title">שכר בסיס</div>
-          <div class="section-sub">משכורת חודשית ברוטו</div>
+          <div class="section-sub" id="salaryModeSub">משכורת חודשית ברוטו</div>
         </div>
       </div>
-      <div class="field">
-        <div class="field-label">שכר ברוטו חודשי <span>₪</span></div>
-        <input type="number" class="field-input" id="baseSalary" placeholder="0" value="" inputmode="numeric">
-      </div>
-      <div class="field-row">
+      <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <div class="field-label">תקן שעות</div>
-          <select class="field-input" id="salaryType">
+          <select class="field-input" id="salaryType" onchange="onSalaryTypeChange()">
             <option value="monthly">חודשי</option>
             <option value="hourly">שעתי</option>
           </select>
@@ -1093,6 +1275,21 @@
             <option value="2026" selected>2026</option>
           </select>
         </div>
+      </div>
+      <!-- Monthly salary input -->
+      <div id="monthlyInput">
+        <div class="field">
+          <div class="field-label">שכר ברוטו חודשי <span>₪</span></div>
+          <input type="number" class="field-input" id="baseSalary" placeholder="0" value="" inputmode="numeric" style="font-size:20px;font-weight:800;text-align:center">
+        </div>
+      </div>
+      <!-- Hourly salary input (hidden by default) -->
+      <div id="hourlyInput" style="display:none">
+        <div class="field">
+          <div class="field-label">שכר לשעה <span>₪</span></div>
+          <input type="number" class="field-input" id="hourlyRate" placeholder="0" value="" inputmode="decimal" step="0.5" style="font-size:20px;font-weight:800;text-align:center">
+        </div>
+        <div id="hourlyCalcPreview" style="background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:8px;font-size:12px;color:var(--text3);line-height:1.8;display:none"></div>
       </div>
     </div>
 
@@ -1443,10 +1640,41 @@
       </div>
     </div>
 
+    <!-- Annual Absence Tracker -->
+    <div class="section" id="annualTrackerSection">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.15)">📅</div>
+        <div>
+          <div class="section-title">מעקב שנתי <span id="annualYear" style="font-weight:400;color:var(--text3)"></span></div>
+          <div class="section-sub">סיכום ימי היעדרות ועבודה מתחילת השנה</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:rgba(34,209,122,0.1);border:1px solid rgba(34,209,122,0.25);border-radius:12px;padding:10px;text-align:center">
+          <div id="annualVacation" style="font-size:22px;font-weight:900;color:var(--green)">0</div>
+          <div style="font-size:10px;color:var(--text3);font-weight:600;margin-top:2px">🌴 ימי חופשה</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:10px;text-align:center">
+          <div id="annualSick" style="font-size:22px;font-weight:900;color:var(--red)">0</div>
+          <div style="font-size:10px;color:var(--text3);font-weight:600;margin-top:2px">🤒 ימי מחלה</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:10px;text-align:center">
+          <div id="annualUnpaid" style="font-size:22px;font-weight:900;color:var(--yellow)">0</div>
+          <div style="font-size:10px;color:var(--text3);font-weight:600;margin-top:2px">🏖️ חל"ת</div>
+        </div>
+      </div>
+      <div class="rate-row">
+        <div class="rate-label">ימי עבודה בפועל</div>
+        <div class="rate-val" id="annualWorkDays" style="color:var(--accent)">0</div>
+      </div>
+      <div class="rate-row">
+        <div class="rate-label">ממוצע שעות ליום (שנתי)</div>
+        <div class="rate-val" id="annualAvgHours">0</div>
+      </div>
+    </div>
+
     
   </div>
-
-  <!-- TAB: MEALS / TICKETS -->
   <div id="tab-tickets" class="page">
 
     <!-- MEAL BENEFIT TYPE SELECTOR -->
@@ -1703,6 +1931,7 @@
     <div id="dashEmpty" class="empty-state">
       <div class="emoji">📊</div>
       <p>הזן את נתוני השכר שלך<br>הדשבורד יתעדכן אוטומטית</p>
+      <button onclick="showTab('input')" style="margin-top:16px;padding:12px 24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;box-shadow:0 4px 16px rgba(79,142,247,0.3)">✏️ הגדר שכר</button>
     </div>
     <div id="dashContent" style="display:none">
       <!-- Net salary -->
@@ -1710,6 +1939,8 @@
         <div class="net-label">שכר נטו לחודש</div>
         <div class="net-amount" id="netAmount">₪0</div>
         <div class="net-sub" id="netSub">מתוך ₪0 ברוטו</div>
+        <div id="salaryChangeIndicator"></div>
+        <div id="lastCalcTime" style="font-size:10px;color:var(--text3);margin-top:6px;opacity:0.7"></div>
       </div>
 
       <!-- ניכויי היעדרות — מוצג רק כשיש ניכויים -->
@@ -1767,6 +1998,14 @@
           <div class="section-icon" style="background:rgba(124,92,252,0.15)">📊</div>
           <div>
             <div class="section-title">פירוט תלוש שכר</div>
+          </div>
+        </div>
+        <!-- Donut Chart -->
+        <div class="donut-container">
+          <canvas id="donutChart" width="160" height="160"></canvas>
+          <div class="donut-center">
+            <div class="donut-center-val" id="donutCenterVal">0%</div>
+            <div class="donut-center-label">נטו מברוטו</div>
           </div>
         </div>
         <div class="breakdown-bar" id="breakdownBar"></div>
@@ -1858,7 +2097,8 @@
     <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:var(--text3)">
       מחשבון שכר v2.0 · ישראל 2026<br>
       כל החישובים מתבצעים מקומית במכשיר שלך<br>
-      הנתונים שלך נשמרים רק אצלך ולא נשלחים לשום מקום
+      הנתונים שלך נשמרים רק אצלך ולא נשלחים לשום מקום<br>
+      <button onclick="showPrivacyPolicy()" style="background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;padding:4px 0;margin-top:4px;text-decoration:underline">מדיניות פרטיות ותנאי שימוש</button>
     </div>
   </div>
 
@@ -1918,7 +2158,7 @@ const state = {
 const STORAGE_KEY = 'salary_app_v1';
 
 function saveAll() {
-  const inputs = ['baseSalary','travel','overtime','bonus','other','sickDays','unpaidDays',
+  const inputs = ['baseSalary','hourlyRate','travel','overtime','bonus','other','sickDays','unpaidDays',
     'creditPoints','gender','numChildren','pensionEmployee','pensionEmployer',
     'trainingFund','trainingFundEmployer','extraDeduction','holidayDays','vacationDays','salaryType','taxYear'];
   const formData = {};
@@ -1996,6 +2236,7 @@ function init() {
   setupMonthLabel();
   setupTaxBrackets();
   setupGenderChange();
+  onSalaryTypeChange(); // restore hourly/monthly UI
   // Auto-save silently on input (no recalc)
   document.querySelectorAll('input, select').forEach(el => {
     el.addEventListener('change', saveAll);
@@ -2684,9 +2925,29 @@ function showTab(name) {
 
 // ============ CALCULATE ============
 function calculate() {
-  const base = parseFloat(document.getElementById('baseSalary').value) || 0;
+  const salaryType = document.getElementById('salaryType')?.value || 'monthly';
+  let base = parseFloat(document.getElementById('baseSalary').value) || 0;
+  const hourlyRate = parseFloat(document.getElementById('hourlyRate')?.value) || 0;
   const travelDaily = parseFloat(document.getElementById('travel')?.value) || 0;
   const key0 = `${calYear}-${calMonth}`;
+
+  // If hourly mode, calculate base from hours worked
+  let hourlyGross = 0;
+  if (salaryType === 'hourly' && hourlyRate > 0) {
+    const hoursMap0 = state.monthHours[key0] || {};
+    const firstDay0h = new Date(calYear, calMonth, 1).getDay();
+    let regH = 0, ot125H = 0, ot150H = 0;
+    Object.keys(hoursMap0).forEach(d => {
+      const hrs = hoursMap0[d];
+      if (hrs <= 0) return;
+      const dow = (firstDay0h + parseInt(d) - 1) % 7;
+      if (dow === 5) { ot125H += Math.min(hrs, 2); ot150H += Math.max(0, hrs - 2); }
+      else { regH += Math.min(hrs, 9); const ot = Math.max(0, hrs - 9); ot125H += Math.min(ot, 2); ot150H += Math.max(0, ot - 2); }
+    });
+    hourlyGross = regH * hourlyRate + ot125H * hourlyRate * 1.25 + ot150H * hourlyRate * 1.5;
+    base = hourlyGross; // Use as base for all calculations
+  }
+
   // ימי עבודה = ימים שנרשמו שעות + ימי חופש (משולם)
   const absMap4Travel = state.dayAbsence[key0] || {};
   const vacationDaysCount = Object.values(absMap4Travel).filter(t => t === 'vacation').length;
@@ -2867,6 +3128,8 @@ function renderDashboard(r) {
 
   document.getElementById('netAmount').textContent = fmt(r.netSalary);
   document.getElementById('netSub').textContent = `מתוך ${fmt(r.grossTotal)} ברוטו`;
+  const lastCalc = document.getElementById('lastCalcTime');
+  if (lastCalc) lastCalc.textContent = `עודכן: ${new Date().toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'})}`;
   document.getElementById('m-gross').textContent = fmt(r.grossTotal);
   document.getElementById('m-tax').textContent = fmt(r.incomeTax);
   document.getElementById('m-bituach').textContent = fmt(r.bituach + r.healthTax);
@@ -3029,6 +3292,8 @@ function renderDashboard(r) {
   });
 
   renderChart(r);
+  renderDonutChart(r);
+  updateSalaryChange(r);
 }
 
 // ============ CHART ============
@@ -3513,6 +3778,77 @@ function showToast(msg) {
   window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+// ============ SALARY MODE (hourly / monthly) ============
+function onSalaryTypeChange() {
+  const type = document.getElementById('salaryType').value;
+  const monthly = document.getElementById('monthlyInput');
+  const hourly = document.getElementById('hourlyInput');
+  const sub = document.getElementById('salaryModeSub');
+  if (type === 'hourly') {
+    monthly.style.display = 'none';
+    hourly.style.display = 'block';
+    if (sub) sub.textContent = 'שכר שעתי — מחושב לפי שעות שהוזנו';
+    updateHourlyPreview();
+  } else {
+    monthly.style.display = 'block';
+    hourly.style.display = 'none';
+    if (sub) sub.textContent = 'משכורת חודשית ברוטו';
+  }
+}
+
+function updateHourlyPreview() {
+  const rate = parseFloat(document.getElementById('hourlyRate')?.value) || 0;
+  const el = document.getElementById('hourlyCalcPreview');
+  if (!el || rate <= 0) { if (el) el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  const key = `${calYear}-${calMonth}`;
+  const hoursMap = state.monthHours[key] || {};
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  let regular = 0, ot125 = 0, ot150 = 0;
+  Object.keys(hoursMap).forEach(d => {
+    const hrs = hoursMap[d];
+    if (hrs <= 0) return;
+    const dow = (firstDay + parseInt(d) - 1) % 7;
+    if (dow === 5) { ot125 += Math.min(hrs, 2); ot150 += Math.max(0, hrs - 2); }
+    else { regular += Math.min(hrs, 9); const ot = Math.max(0, hrs - 9); ot125 += Math.min(ot, 2); ot150 += Math.max(0, ot - 2); }
+  });
+  const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+  const totalGross = regular * rate + ot125 * rate * 1.25 + ot150 * rate * 1.5;
+  el.innerHTML = `
+    שעות רגילות: ${regular.toFixed(1)} × ${fmt(rate)} = ${fmt(regular * rate)}<br>
+    שעות 125%: ${ot125.toFixed(1)} × ${fmt(rate * 1.25)} = ${fmt(ot125 * rate * 1.25)}<br>
+    שעות 150%: ${ot150.toFixed(1)} × ${fmt(rate * 1.5)} = ${fmt(ot150 * rate * 1.5)}<br>
+    <strong style="color:var(--accent)">סה"כ ברוטו משוער: ${fmt(totalGross)}</strong>
+  `;
+}
+
+// Hook hourly rate input
+document.addEventListener('DOMContentLoaded', () => {
+  const hrEl = document.getElementById('hourlyRate');
+  if (hrEl) {
+    hrEl.addEventListener('input', () => { updateHourlyPreview(); });
+    hrEl.addEventListener('change', () => { saveAll(); });
+  }
+});
+
+// ============ ANNUAL ABSENCE TRACKER ============
+function getAnnualAbsence() {
+  const year = new Date().getFullYear();
+  let sick = 0, unpaid = 0, vacation = 0, totalWorkDays = 0;
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${m}`;
+    const absMap = state.dayAbsence[key] || {};
+    Object.values(absMap).forEach(t => {
+      if (t === 'sick') sick++;
+      else if (t === 'unpaid') unpaid++;
+      else if (t === 'vacation') vacation++;
+    });
+    const hoursMap = state.monthHours[key] || {};
+    totalWorkDays += Object.keys(hoursMap).filter(d => hoursMap[d] > 0).length;
+  }
+  return { sick, unpaid, vacation, totalWorkDays };
+}
+
 // ============ QUICK SALARY SUMMARY ============
 function updateQuickSummary() {
   const card = document.getElementById('quickSalaryCard');
@@ -3522,24 +3858,41 @@ function updateQuickSummary() {
     const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
     document.getElementById('quickNetSalary').textContent = fmt(state.result.netSalary);
     // Annual absence tracking
-    const now = new Date();
-    const year = now.getFullYear();
-    let totalVac = 0, totalSick = 0;
-    for (let m = 0; m < 12; m++) {
-      const key = `${year}-${m}`;
-      const absMap = state.dayAbsence[key] || {};
-      Object.values(absMap).forEach(t => {
-        if (t === 'vacation') totalVac++;
-        else if (t === 'sick') totalSick++;
-      });
-    }
+    const annual = getAnnualAbsence();
     const qv = document.getElementById('quickVacDays');
     const qs = document.getElementById('quickSickDays');
-    if (qv) qv.textContent = totalVac;
-    if (qs) qs.textContent = totalSick;
+    if (qv) qv.textContent = annual.vacation;
+    if (qs) qs.textContent = annual.sick;
   } else {
     card.style.display = 'none';
   }
+  // Update annual tracker section
+  updateAnnualTracker();
+}
+
+function updateAnnualTracker() {
+  const annual = getAnnualAbsence();
+  const yearEl = document.getElementById('annualYear');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  const av = document.getElementById('annualVacation');
+  const as = document.getElementById('annualSick');
+  const au = document.getElementById('annualUnpaid');
+  const aw = document.getElementById('annualWorkDays');
+  const ah = document.getElementById('annualAvgHours');
+  if (av) av.textContent = annual.vacation;
+  if (as) as.textContent = annual.sick;
+  if (au) au.textContent = annual.unpaid;
+  if (aw) aw.textContent = annual.totalWorkDays + ' ימים';
+  // Calculate annual avg hours
+  const year = new Date().getFullYear();
+  let totalHrs = 0;
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${m}`;
+    const hm = state.monthHours[key] || {};
+    Object.values(hm).forEach(h => { if (h > 0) totalHrs += h; });
+  }
+  const avgH = annual.totalWorkDays > 0 ? (totalHrs / annual.totalWorkDays).toFixed(1) : '0';
+  if (ah) ah.textContent = avgH + ' שעות';
 }
 
 // ============ ONBOARDING WIZARD ============
@@ -3730,6 +4083,259 @@ function finishOnboarding() {
   initMealBenefits();
   updateQuickSummary();
   showToast('🎉 מוכן! מחשבון השכר שלך מוגדר');
+}
+
+// ============ DONUT CHART ============
+function renderDonutChart(r) {
+  const canvas = document.getElementById('donutChart');
+  if (!canvas || !r || r.grossTotal <= 0) return;
+  const ctx = canvas.getContext('2d');
+  const size = 160;
+  const cx = size / 2, cy = size / 2, radius = 60, lineWidth = 18;
+  ctx.clearRect(0, 0, size, size);
+
+  const segments = [
+    { val: r.netSalary, color: '#22d17a', label: 'נטו' },
+    { val: r.incomeTax, color: '#ef4444', label: 'מס הכנסה' },
+    { val: r.bituach + r.healthTax, color: '#f97316', label: 'ב.ל + בריאות' },
+    { val: r.pensionEmployee + r.trainingEmployee, color: '#7c5cfc', label: 'פנסיה' },
+    { val: r.extraDeduction, color: '#f59e0b', label: 'אחר' },
+  ].filter(s => s.val > 0);
+
+  let startAngle = -Math.PI / 2;
+  segments.forEach(seg => {
+    const sweep = (seg.val / r.grossTotal) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startAngle, startAngle + sweep);
+    ctx.strokeStyle = seg.color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    startAngle += sweep + 0.03; // small gap
+  });
+
+  // Center text
+  const pct = Math.round((r.netSalary / r.grossTotal) * 100);
+  const centerEl = document.getElementById('donutCenterVal');
+  if (centerEl) centerEl.textContent = pct + '%';
+}
+
+// ============ SALARY CHANGE INDICATOR ============
+function updateSalaryChange(r) {
+  const el = document.getElementById('salaryChangeIndicator');
+  if (!el || !r) { if (el) el.innerHTML = ''; return; }
+
+  // Compare with previous month
+  let prevMonth = calMonth - 1, prevYear = calYear;
+  if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+  const prevKey = `salary_result_${prevYear}-${prevMonth}`;
+  const prevNet = parseFloat(localStorage.getItem(prevKey)) || 0;
+
+  // Save current month
+  const curKey = `salary_result_${calYear}-${calMonth}`;
+  localStorage.setItem(curKey, Math.round(r.netSalary));
+
+  if (prevNet <= 0) { el.innerHTML = ''; return; }
+
+  const diff = r.netSalary - prevNet;
+  const pct = Math.round((diff / prevNet) * 100);
+  const fmt = n => '₪' + Math.abs(Math.round(n)).toLocaleString('he-IL');
+
+  if (Math.abs(diff) < 10) {
+    el.innerHTML = `<div class="salary-change same">= ללא שינוי מחודש קודם</div>`;
+  } else if (diff > 0) {
+    el.innerHTML = `<div class="salary-change up">▲ +${fmt(diff)} (+${pct}%) מחודש קודם</div>`;
+  } else {
+    el.innerHTML = `<div class="salary-change down">▼ −${fmt(diff)} (${pct}%) מחודש קודם</div>`;
+  }
+}
+
+// ============ PULL TO REFRESH ============
+function setupPullToRefresh() {
+  let startY = 0, pulling = false;
+  const ptr = document.getElementById('ptrIndicator');
+  if (!ptr) return;
+
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const diff = e.touches[0].clientY - startY;
+    if (diff > 60 && window.scrollY === 0) {
+      ptr.classList.add('visible');
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    if (ptr.classList.contains('visible')) {
+      ptr.classList.add('loading');
+      // Recalculate everything
+      calculate();
+      renderHoursCalendar();
+      updateMealDisplay();
+      updateAnnualTracker();
+      setTimeout(() => {
+        ptr.classList.remove('visible', 'loading');
+        showToast('✅ הנתונים עודכנו');
+      }, 800);
+    }
+  }, { passive: true });
+}
+
+// ============ SWIPE NAVIGATION FOR CALENDAR ============
+function setupSwipeCalendar() {
+  const calEl = document.getElementById('hoursCalendar');
+  if (!calEl) return;
+  let startX = 0;
+
+  calEl.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+
+  calEl.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].clientX - startX;
+    if (Math.abs(diff) > 80) {
+      if (diff > 0) changeMonth(-1); // swipe right = prev month (RTL)
+      else changeMonth(1); // swipe left = next month
+    }
+  }, { passive: true });
+}
+
+// ============ SPLASH SCREEN ============
+function hideSplash() {
+  const splash = document.getElementById('splashScreen');
+  if (splash) {
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 600);
+  }
+}
+
+// ============ WHAT'S NEW ============
+const APP_VERSION = '2.0';
+const LAST_VERSION_KEY = 'last_seen_version';
+
+function checkWhatsNew() {
+  const lastVersion = localStorage.getItem(LAST_VERSION_KEY);
+  if (lastVersion === APP_VERSION) return;
+  // Don't show on first install (onboarding handles that)
+  if (!lastVersion && shouldShowOnboarding()) {
+    localStorage.setItem(LAST_VERSION_KEY, APP_VERSION);
+    return;
+  }
+  if (!lastVersion) {
+    localStorage.setItem(LAST_VERSION_KEY, APP_VERSION);
+    return;
+  }
+  showWhatsNew();
+}
+
+function showWhatsNew() {
+  const overlay = document.createElement('div');
+  overlay.className = 'whats-new-overlay';
+  overlay.id = 'whatsNewOverlay';
+  overlay.innerHTML = `
+    <div class="whats-new-card">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:36px;margin-bottom:8px">🚀</div>
+        <div style="font-size:20px;font-weight:900;color:var(--text)">מה חדש בגרסה ${APP_VERSION}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">שדרגנו את האפליקציה עם פיצ'רים חדשים</div>
+      </div>
+
+      <div class="wn-feature">
+        <div class="wn-icon" style="background:rgba(245,158,11,0.15)">🍽️</div>
+        <div class="wn-text">
+          <div class="wn-title">הטבת ארוחות מורחבת</div>
+          <div class="wn-desc">תמיכה בסיבוס, תן ביס, פתקי אוכל ועוד — עם מעקב יתרה חכם</div>
+        </div>
+      </div>
+
+      <div class="wn-feature">
+        <div class="wn-icon" style="background:rgba(79,142,247,0.15)">📱</div>
+        <div class="wn-text">
+          <div class="wn-title">ניווט חדש</div>
+          <div class="wn-desc">סרגל ניווט תחתון קבוע, אנימציות מעבר, והחלקה בלוח השעות</div>
+        </div>
+      </div>
+
+      <div class="wn-feature">
+        <div class="wn-icon" style="background:rgba(124,92,252,0.15)">📊</div>
+        <div class="wn-text">
+          <div class="wn-title">דשבורד משופר</div>
+          <div class="wn-desc">גרף עוגה, השוואה לחודש קודם, ותצוגת שכר שעתי</div>
+        </div>
+      </div>
+
+      <div class="wn-feature">
+        <div class="wn-icon" style="background:rgba(34,209,122,0.15)">📅</div>
+        <div class="wn-text">
+          <div class="wn-title">מעקב שנתי</div>
+          <div class="wn-desc">סיכום ימי חופשה, מחלה וחל"ת מתחילת השנה</div>
+        </div>
+      </div>
+
+      <div class="wn-feature">
+        <div class="wn-icon" style="background:rgba(239,68,68,0.15)">💾</div>
+        <div class="wn-text">
+          <div class="wn-title">גיבוי ושחזור</div>
+          <div class="wn-desc">גיבוי כל הנתונים ל-JSON ושחזור בלחיצה</div>
+        </div>
+      </div>
+
+      <button onclick="closeWhatsNew()" style="width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">מעולה, הבנתי!</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function closeWhatsNew() {
+  localStorage.setItem(LAST_VERSION_KEY, APP_VERSION);
+  const el = document.getElementById('whatsNewOverlay');
+  if (el) el.remove();
+}
+
+// ============ PRIVACY & TERMS ============
+function showPrivacyPolicy() {
+  const overlay = document.createElement('div');
+  overlay.className = 'whats-new-overlay';
+  overlay.id = 'privacyOverlay';
+  overlay.innerHTML = `
+    <div class="whats-new-card" style="max-height:85vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:18px;font-weight:800;color:var(--text)">מדיניות פרטיות ותנאי שימוש</div>
+        <button onclick="document.getElementById('privacyOverlay').remove()"
+          style="background:var(--surface3);border:none;border-radius:8px;padding:6px 12px;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Heebo',sans-serif">✕</button>
+      </div>
+      <div style="font-size:13px;color:var(--text2);line-height:2;direction:rtl">
+        <strong style="color:var(--text)">מדיניות פרטיות</strong><br>
+        אפליקציית "מחשבון שכר" מעבדת את כל הנתונים מקומית על המכשיר שלך בלבד.<br>
+        🔒 אנחנו לא אוספים, שולחים או מאחסנים שום מידע אישי בשרתים חיצוניים.<br>
+        📱 כל הנתונים נשמרים ב-localStorage של הדפדפן — רק אתה יכול לגשת אליהם.<br>
+        🗑️ מחיקת נתוני הדפדפן תמחק את כל הנתונים באפליקציה.<br>
+        💾 ניתן לגבות ולשחזר נתונים דרך לשונית הייצוא.<br><br>
+
+        <strong style="color:var(--text)">תנאי שימוש</strong><br>
+        ⚖️ האפליקציה מספקת הערכת שכר מקורבת ואינה מהווה ייעוץ מס או ייעוץ משפטי.<br>
+        📊 החישובים מבוססים על מדרגות מס ותקנות ביטוח לאומי בישראל ומתעדכנים מעת לעת.<br>
+        ⚠️ לחישוב מדויק של השכר שלך, יש להיוועץ ברואה חשבון או יועץ מס מוסמך.<br>
+        📋 המשתמש אחראי לנכונות הנתונים שהוא מזין.<br>
+        🔄 האפליקציה מסופקת "כמות שהיא" (AS IS) ללא אחריות.<br><br>
+
+        <strong style="color:var(--text)">יצירת קשר</strong><br>
+        לשאלות, הצעות או דיווח על באגים — ניתן ליצור קשר דרך חנות האפליקציות.<br><br>
+
+        <div style="font-size:11px;color:var(--text3);text-align:center">גרסה ${APP_VERSION} · עודכן לאחרונה: 2026</div>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 // ============ START ============
@@ -4693,8 +5299,15 @@ setTimeout(() => {
   enforce24h();
   checkSmartNotifications();
   updateQuickSummary();
-  // Show onboarding for new users
-  setTimeout(() => showOnboarding(), 800);
+  setupPullToRefresh();
+  setupSwipeCalendar();
+  // Hide splash screen
+  setTimeout(() => hideSplash(), 1400);
+  // Show onboarding for new users, or what's new for returning users
+  setTimeout(() => {
+    if (shouldShowOnboarding()) showOnboarding();
+    else checkWhatsNew();
+  }, 1800);
 }, 600);
 </script>
 </body>

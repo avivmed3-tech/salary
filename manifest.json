@@ -1,44 +1,81 @@
 {
-  "name": "מחשבון שכר",
-  "short_name": "שכר",
-  "description": "מחשבון שכר ישראלי 2026",
+  "name": "מחשבון שכר - חישוב משכורת",
+  "short_name": "מחשבון שכר",
+  "description": "מחשבון שכר ישראלי מקצועי — חישוב נטו מברוטו, מעקב שעות, הטבות ארוחות, מדרגות מס 2026, ביטוח לאומי ופנסיה. הכל מקומי ופרטי.",
   "start_url": "./index.html",
+  "scope": "./",
+  "id": "salary-calculator-il",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0d0f26",
+  "background_color": "#0d0f14",
   "theme_color": "#0d0f26",
   "lang": "he",
   "dir": "rtl",
+  "categories": ["finance", "productivity", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "./icon152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon167.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-192.png",
+      "src": "./icon192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./icon512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "./icon512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "./icon-1024.png",
+      "src": "./icon1024.png",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "שעון נוכחות",
+      "short_name": "שעון",
+      "url": "./index.html#hours",
+      "icons": [{"src": "./icon192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "דשבורד שכר",
+      "short_name": "דשבורד",
+      "url": "./index.html#dashboard",
+      "icons": [{"src": "./icon192.png", "sizes": "192x192"}]
     }
   ]
 }

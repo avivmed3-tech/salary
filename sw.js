@@ -1,9 +1,9 @@
-const CACHE = 'salary-app-v6';
+const CACHE = 'salary-app-v9';
 const ASSETS = [
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './icon192.png',
+  './icon512.png'
 ];
 
 self.addEventListener('message', e => {
