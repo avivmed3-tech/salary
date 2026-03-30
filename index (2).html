@@ -63,6 +63,9 @@
   body.light-mode .tabs { background: var(--surface); border-bottom: 1px solid var(--border); }
   body.light-mode .tab.active { background: var(--accent); color: #fff; }
   body.light-mode input, body.light-mode select { color: var(--text) !important; }
+  body.light-mode .bottom-nav { background: rgba(255,255,255,0.92); border-top: 1px solid rgba(0,0,0,0.08); }
+  body.light-mode .bottom-nav .nav-item.active { color: var(--accent); }
+  body.light-mode .bottom-nav .nav-item { color: #6b7280; }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   input[type="time"] { -webkit-text-security: none; }
@@ -105,7 +108,7 @@
   .app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 0 0 120px;
+    padding: 0 0 90px;
     position: relative;
     z-index: 1;
   }
@@ -152,15 +155,69 @@
     letter-spacing: 0.5px;
   }
 
-  /* Tabs */
+  /* Tabs — now hidden on mobile, visible as backup on desktop */
   .tabs {
-    display: flex;
+    display: none;
     padding: 12px 20px;
     gap: 8px;
     overflow-x: auto;
     scrollbar-width: none;
   }
+  @media (min-width: 600px) { .tabs { display: flex; } }
   .tabs::-webkit-scrollbar { display: none; }
+
+  /* Bottom Navigation Bar */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    background: rgba(22,25,35,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 6px;
+    gap: 2px;
+    color: var(--text3);
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: color 0.2s, transform 0.15s;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-item:active { transform: scale(0.92); }
+  .nav-item .nav-icon { font-size: 20px; line-height: 1; transition: transform 0.2s; }
+  .nav-item.active { color: var(--accent); }
+  .nav-item.active .nav-icon { transform: scale(1.1); }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 2.5px;
+    background: var(--accent);
+    border-radius: 0 0 4px 4px;
+  }
+  @media (min-width: 600px) { .bottom-nav { display: none; } }
   .tab {
     flex-shrink: 0;
     padding: 8px 16px;
@@ -183,7 +240,11 @@
 
   /* Pages */
   .page { display: none; padding: 0 16px; }
-  .page.active { display: block; }
+  .page.active { display: block; animation: pageIn 0.25s ease; }
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   /* Section */
   .section {
@@ -389,8 +450,6 @@
     letter-spacing: 0.3px;
     box-shadow: 0 8px 24px rgba(79,142,247,0.35);
     transition: transform 0.15s, box-shadow 0.15s;
-    position: sticky;
-    bottom: 16px;
     z-index: 50;
   }
   .calc-btn:active { transform: scale(0.98); box-shadow: 0 4px 12px rgba(79,142,247,0.25); }
@@ -813,8 +872,12 @@
     transition: all 0.3s;
     z-index: 999;
     white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    max-width: calc(100vw - 40px);
+    text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 599px) { .toast { bottom: 70px; } }
 
   select.field-input {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238892a4' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -862,6 +925,116 @@
     transition: all 0.2s;
   }
   .month-chip.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* Onboarding Wizard */
+  .onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .onboarding-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 28px 24px;
+    max-width: 400px;
+    width: 100%;
+    animation: fadeUp 0.4s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .onboarding-step-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .onboarding-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--surface3);
+    transition: all 0.3s;
+  }
+  .onboarding-dot.active {
+    background: var(--accent);
+    width: 24px;
+    border-radius: 4px;
+  }
+  .onboarding-dot.done { background: var(--green); }
+  .ob-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .ob-sub {
+    font-size: 13px;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .ob-next {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: transform 0.15s;
+  }
+  .ob-next:active { transform: scale(0.97); }
+  .ob-skip {
+    display: block;
+    margin: 10px auto 0;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    padding: 6px 12px;
+  }
+  .ob-skip:hover { color: var(--text2); }
+
+  /* Quick salary summary card on hours tab */
+  .salary-quick-card {
+    background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(124,92,252,0.08));
+    border: 1.5px solid rgba(79,142,247,0.2);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .salary-quick-card:active { transform: scale(0.99); opacity: 0.9; }
+
+  /* Annual tracker badges */
+  .annual-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -871,6 +1044,7 @@
     <div class="header-logo">
       <div class="header-icon">💼</div>
       <h1>מחשבון שכר</h1>
+      <span style="font-size:10px;color:var(--text3);background:var(--surface3);border-radius:10px;padding:2px 8px;font-weight:600;margin-right:4px">v2.0</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="header-sub">חישוב שכר מקצועי · ישראל 2026</div>
@@ -882,7 +1056,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('hours')">🕐 שעות</button>
     <button class="tab" onclick="showTab('input')">✏️ שכר</button>
-    <button class="tab" onclick="showTab('tickets')">🍽️ פתקים</button>
+    <button class="tab" onclick="showTab('tickets')">🍽️ ארוחות</button>
     <button class="tab" onclick="showTab('dashboard')">📊 דשבורד</button>
     <button class="tab" onclick="showTab('deductions')">📋 ניכויים</button>
     <button class="tab" onclick="showTab('export')">📤 ייצוא</button>
@@ -1070,6 +1244,27 @@
   <!-- TAB: HOURS -->
   <div id="tab-hours" class="page active">
 
+    <!-- Quick Salary Summary (visible when salary is calculated) -->
+    <div id="quickSalaryCard" class="salary-quick-card" style="display:none" onclick="showTab('dashboard')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text3)">שכר נטו משוער החודש</div>
+          <div id="quickNetSalary" style="font-size:28px;font-weight:900;color:var(--accent);letter-spacing:-1px;line-height:1.2">₪0</div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:11px;color:var(--text3)">לחץ לדשבורד →</div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <div class="annual-badge" style="color:var(--green)">
+              🌴 <span id="quickVacDays">0</span>
+            </div>
+            <div class="annual-badge" style="color:var(--red)">
+              🤒 <span id="quickSickDays">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- CLOCK IN/OUT WIDGET -->
     <div class="section" id="clockWidget" style="background:linear-gradient(135deg,rgba(79,142,247,0.12),rgba(124,92,252,0.12));border:1.5px solid rgba(79,142,247,0.25)">
       
@@ -1251,20 +1446,71 @@
     
   </div>
 
-  <!-- TAB: TICKETS -->
+  <!-- TAB: MEALS / TICKETS -->
   <div id="tab-tickets" class="page">
-    <!-- FOOD TICKETS WIDGET -->
+
+    <!-- MEAL BENEFIT TYPE SELECTOR -->
     <div class="section" style="background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(249,115,22,0.08));border:1.5px solid rgba(245,158,11,0.25)">
       <div class="section-header" style="margin-bottom:14px">
-        <div class="section-icon" style="background:rgba(245,158,11,0.2)">🎫</div>
+        <div class="section-icon" style="background:rgba(245,158,11,0.2)">🍽️</div>
         <div>
-          <div class="section-title">פתקי אוכל</div>
-          <div class="section-sub">מעקב חודשי — מתאפס בתחילת כל חודש</div>
+          <div class="section-title">הטבת ארוחות</div>
+          <div class="section-sub">בחר את סוג ההטבה שאתה מקבל מהמעסיק</div>
         </div>
       </div>
 
-      <!-- Stats row -->
-      <div style="display:flex;gap:10px;margin-bottom:14px">
+      <!-- Benefit type selector -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="mealTypeGrid">
+        <button onclick="setMealType('tickets')" id="meal-btn-tickets"
+          style="padding:12px 8px;border-radius:12px;border:1.5px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.15);color:var(--yellow);font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center;transition:all 0.2s">
+          🎫<br>פתקי אוכל
+        </button>
+        <button onclick="setMealType('cibus')" id="meal-btn-cibus"
+          style="padding:12px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center;transition:all 0.2s">
+          💳<br>סיבוס
+        </button>
+        <button onclick="setMealType('tenbis')" id="meal-btn-tenbis"
+          style="padding:12px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center;transition:all 0.2s">
+          📱<br>תן ביס
+        </button>
+        <button onclick="setMealType('other')" id="meal-btn-other"
+          style="padding:12px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center;transition:all 0.2s">
+          🍴<br>אחר
+        </button>
+      </div>
+
+      <!-- Daily value config (for card-based types) -->
+      <div id="mealValueConfig" style="display:none;background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:10px" id="mealValueLabel">💳 ערך יומי בכרטיס</div>
+        <div class="field-row">
+          <div class="field">
+            <div class="field-label">סכום יומי <span>₪</span></div>
+            <input type="number" class="field-input" id="mealDailyValue" placeholder="50" value="" step="1" inputmode="decimal" onchange="saveMealSettings();updateMealDisplay()">
+          </div>
+          <div class="field">
+            <div class="field-label">תקרה חודשית <span>₪</span></div>
+            <input type="number" class="field-input" id="mealMonthlyMax" placeholder="ללא" value="" step="1" inputmode="decimal" onchange="saveMealSettings();updateMealDisplay()">
+          </div>
+        </div>
+        <div id="mealCustomName" style="display:none" class="field">
+          <div class="field-label" style="margin-top:10px">שם ההטבה</div>
+          <input type="text" class="field-input" id="mealOtherName" placeholder="למשל: Wolt, גודי, שוברים" value="" onchange="saveMealSettings();updateMealDisplay()">
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS CARD (dynamic based on type) -->
+    <div class="section">
+      <div class="section-header" style="margin-bottom:14px">
+        <div class="section-icon" style="background:rgba(34,209,122,0.15)" id="mealStatsIcon">🎫</div>
+        <div>
+          <div class="section-title" id="mealStatsTitle">מעקב החודש</div>
+          <div class="section-sub" id="mealStatsSub">מתאפס בתחילת כל חודש</div>
+        </div>
+      </div>
+
+      <!-- Stats row — tickets mode -->
+      <div id="mealStatsTickets" style="display:flex;gap:10px;margin-bottom:14px">
         <div style="flex:1;background:var(--surface2);border-radius:12px;padding:12px;text-align:center">
           <div id="ticketsEarned" style="font-size:26px;font-weight:900;color:var(--yellow)">0</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">זכאי למשוך</div>
@@ -1279,20 +1525,87 @@
         </div>
       </div>
 
-      <!-- Breakdown -->
+      <!-- Stats row — card/monetary mode -->
+      <div id="mealStatsCard" style="display:none;margin-bottom:14px">
+        <!-- Balance card -->
+        <div style="background:linear-gradient(135deg,rgba(34,209,122,0.1),rgba(79,142,247,0.08));border:1.5px solid rgba(34,209,122,0.3);border-radius:16px;padding:18px;text-align:center;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px" id="mealBalanceLabel">יתרה זמינה</div>
+          <div id="mealBalance" style="font-size:42px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1">₪0</div>
+          <div id="mealBalanceSub" style="font-size:12px;color:var(--text3);margin-top:6px"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;background:var(--surface2);border-radius:12px;padding:12px;text-align:center">
+            <div id="mealTotalLoaded" style="font-size:20px;font-weight:900;color:var(--yellow)">₪0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">נטען החודש</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:12px;padding:12px;text-align:center">
+            <div id="mealTotalSpent" style="font-size:20px;font-weight:900;color:var(--orange)">₪0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">נוצל</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:12px;padding:12px;text-align:center">
+            <div id="mealDaysLeft" style="font-size:20px;font-weight:900;color:var(--accent)">0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">ימים נותרו</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div id="mealProgressWrap" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--text3);font-weight:600" id="mealProgressLabel">ניצול החודש</span>
+          <span style="font-size:11px;color:var(--text2);font-weight:700" id="mealProgressPct">0%</span>
+        </div>
+        <div style="background:var(--surface3);border-radius:6px;height:8px;overflow:hidden">
+          <div id="mealProgressBar" style="height:100%;border-radius:6px;background:var(--green);width:0%;transition:width 0.5s ease,background 0.3s"></div>
+        </div>
+      </div>
+
+      <!-- Breakdown text -->
       <div id="ticketsBreakdown" style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:12px"></div>
 
-      <!-- Withdraw -->
-      <div style="display:flex;gap:10px;align-items:center">
-        <div style="flex:1;background:var(--surface2);border-radius:10px;display:flex;align-items:center;overflow:hidden">
-          <button onclick="changeTicketWithdraw(-1)" style="padding:10px 14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;font-family:'Heebo',sans-serif">−</button>
-          <input type="number" id="ticketWithdrawInput" value="0" min="0" inputmode="numeric"
-            style="flex:1;background:none;border:none;text-align:center;color:var(--text);font-size:18px;font-weight:800;font-family:'Heebo',sans-serif;width:0">
-          <button onclick="changeTicketWithdraw(1)" style="padding:10px 14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;font-family:'Heebo',sans-serif">+</button>
+      <!-- Withdraw / Log spending -->
+      <div id="mealActionTickets">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="flex:1;background:var(--surface2);border-radius:10px;display:flex;align-items:center;overflow:hidden">
+            <button onclick="changeTicketWithdraw(-1)" style="padding:10px 14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;font-family:'Heebo',sans-serif">−</button>
+            <input type="number" id="ticketWithdrawInput" value="0" min="0" inputmode="numeric"
+              style="flex:1;background:none;border:none;text-align:center;color:var(--text);font-size:18px;font-weight:800;font-family:'Heebo',sans-serif;width:0">
+            <button onclick="changeTicketWithdraw(1)" style="padding:10px 14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;font-family:'Heebo',sans-serif">+</button>
+          </div>
+          <button onclick="withdrawTickets()" style="padding:12px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap">משוך</button>
         </div>
-        <button onclick="withdrawTickets()" style="padding:12px 18px;background:linear-gradient(135deg,#f59e0b,#f97316);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap">משוך</button>
       </div>
-      <button onclick="showTicketsHistory()" style="width:100%;margin-top:10px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">📋 היסטוריית משיכות</button
+
+      <div id="mealActionCard" style="display:none">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="flex:1;background:var(--surface2);border-radius:10px;display:flex;align-items:center;overflow:hidden;padding:0 6px">
+            <span style="font-size:14px;color:var(--text3);padding:0 4px">₪</span>
+            <input type="number" id="mealSpendInput" value="" min="0" step="1" inputmode="decimal" placeholder="סכום"
+              style="flex:1;background:none;border:none;text-align:center;color:var(--text);font-size:18px;font-weight:800;font-family:'Heebo',sans-serif;width:0;padding:10px 4px">
+          </div>
+          <button onclick="logMealSpending()" style="padding:12px 18px;background:linear-gradient(135deg,#22d17a,#4f8ef7);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;white-space:nowrap">💳 רשום הוצאה</button>
+        </div>
+        <!-- Quick spend amounts -->
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <button onclick="quickMealSpend(30)" style="flex:1;min-width:50px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">₪30</button>
+          <button onclick="quickMealSpend(40)" style="flex:1;min-width:50px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">₪40</button>
+          <button onclick="quickMealSpend(50)" style="flex:1;min-width:50px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">₪50</button>
+          <button onclick="quickMealSpend(60)" style="flex:1;min-width:50px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">₪60</button>
+          <button onclick="quickMealSpend(80)" style="flex:1;min-width:50px;padding:7px 4px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">₪80</button>
+        </div>
+      </div>
+
+      <button onclick="showTicketsHistory()" style="width:100%;margin-top:10px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">📋 היסטוריית שימוש</button>
+    </div>
+
+    <!-- Daily spending tip -->
+    <div id="mealDailyTip" class="section" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:24px">💡</div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)" id="mealTipTitle">טיפ יומי</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6" id="mealTipText"></div>
+        </div>
       </div>
     </div>
 
@@ -1304,7 +1617,7 @@
           <div class="section-title">איך זה עובד?</div>
         </div>
       </div>
-      <div style="font-size:13px;color:var(--text2);line-height:2">
+      <div id="mealExplanation" style="font-size:13px;color:var(--text2);line-height:2">
         🎫 פתק אחד לכל יום עבודה שהגעת<br>
         ⭐ פתק בונוס לכל יום בו עבדת 12 שעות ומעלה<br>
         📅 הנתונים מתאפסים בתחילת כל חודש<br>
@@ -1524,9 +1837,60 @@
       </div>
       <div id="exportText" style="font-family:monospace;font-size:12px;color:var(--text2);line-height:1.8;white-space:pre-wrap;direction:rtl"></div>
     </div>
+
+    <!-- Data Management -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(239,68,68,0.15)">⚙️</div>
+        <div>
+          <div class="section-title">ניהול נתונים</div>
+          <div class="section-sub">גיבוי, שחזור ואיפוס</div>
+        </div>
+      </div>
+      <button class="export-btn" onclick="backupData()" style="border-color:rgba(79,142,247,0.4)">💾 גיבוי כל הנתונים (JSON)</button>
+      <button class="export-btn" onclick="document.getElementById('restoreInput').click()">📂 שחזור מגיבוי</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(this)">
+      <div style="height:1px;background:var(--border);margin:8px 0"></div>
+      <button class="export-btn" onclick="confirmResetAll()" style="border-color:rgba(239,68,68,0.3);color:var(--red)">🗑️ איפוס כל הנתונים</button>
+    </div>
+
+    <!-- App Info -->
+    <div style="text-align:center;padding:16px 0 8px;font-size:11px;color:var(--text3)">
+      מחשבון שכר v2.0 · ישראל 2026<br>
+      כל החישובים מתבצעים מקומית במכשיר שלך<br>
+      הנתונים שלך נשמרים רק אצלך ולא נשלחים לשום מקום
+    </div>
   </div>
 
 </div>
+
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav" id="bottomNav" role="navigation" aria-label="ניווט ראשי">
+  <button class="nav-item active" onclick="showTab('hours')" data-tab="hours" aria-label="שעות עבודה" role="tab" aria-selected="true">
+    <span class="nav-icon" aria-hidden="true">🕐</span>
+    <span>שעות</span>
+  </button>
+  <button class="nav-item" onclick="showTab('input')" data-tab="input" aria-label="הגדרות שכר" role="tab">
+    <span class="nav-icon" aria-hidden="true">✏️</span>
+    <span>שכר</span>
+  </button>
+  <button class="nav-item" onclick="showTab('tickets')" data-tab="tickets" aria-label="הטבת ארוחות" role="tab">
+    <span class="nav-icon" aria-hidden="true">🍽️</span>
+    <span>ארוחות</span>
+  </button>
+  <button class="nav-item" onclick="showTab('dashboard')" data-tab="dashboard" aria-label="דשבורד שכר" role="tab">
+    <span class="nav-icon" aria-hidden="true">📊</span>
+    <span>דשבורד</span>
+  </button>
+  <button class="nav-item" onclick="showTab('deductions')" data-tab="deductions" aria-label="ניכויים ומיסים" role="tab">
+    <span class="nav-icon" aria-hidden="true">📋</span>
+    <span>ניכויים</span>
+  </button>
+  <button class="nav-item" onclick="showTab('export')" data-tab="export" aria-label="ייצוא נתונים" role="tab">
+    <span class="nav-icon" aria-hidden="true">📤</span>
+    <span>ייצוא</span>
+  </button>
+</nav>
 
 <div class="toast" id="toast"></div>
 
@@ -1541,6 +1905,12 @@ const state = {
   dayAbsence: {}, // key: "YYYY-M", value: { day: 'sick'|'unpaid'|'short' }
   residentCredit: true,
   sickPolicy: 'legal', // 'legal' | 'day1'
+  mealType: 'tickets', // 'tickets' | 'cibus' | 'tenbis' | 'other'
+  mealDailyValue: 0,
+  mealMonthlyMax: 0,
+  mealOtherName: '',
+  mealSpending: {}, // key: "YYYY-M", value: total spent (₪)
+  mealSpendingHistory: [], // [{date, amount, month}]
   result: null
 };
 
@@ -1564,6 +1934,12 @@ function saveAll() {
     dayAbsence: state.dayAbsence,
     sickPolicy: state.sickPolicy,
     residentCredit: state.residentCredit,
+    mealType: state.mealType,
+    mealDailyValue: state.mealDailyValue,
+    mealMonthlyMax: state.mealMonthlyMax,
+    mealOtherName: state.mealOtherName,
+    mealSpending: state.mealSpending,
+    mealSpendingHistory: state.mealSpendingHistory,
     savedAt: Date.now()
   };
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
@@ -1599,6 +1975,13 @@ function loadAll() {
       const el = document.getElementById('toggle-resident');
       if (el) el.classList.toggle('on', state.residentCredit !== false);
     }
+    // Meal benefit settings
+    if (data.mealType) state.mealType = data.mealType;
+    if (data.mealDailyValue !== undefined) state.mealDailyValue = data.mealDailyValue;
+    if (data.mealMonthlyMax !== undefined) state.mealMonthlyMax = data.mealMonthlyMax;
+    if (data.mealOtherName !== undefined) state.mealOtherName = data.mealOtherName;
+    if (data.mealSpending) state.mealSpending = data.mealSpending;
+    if (data.mealSpendingHistory) state.mealSpendingHistory = data.mealSpendingHistory;
   } catch(e) {}
 }
 
@@ -1777,7 +2160,7 @@ function changeMonth(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderHoursCalendar();
-  updateTicketsDisplay();
+  updateMealDisplay();
 }
 
 function renderHoursCalendar() {
@@ -2170,7 +2553,7 @@ function confirmHours(day) {
 
   closePopup();
   renderHoursCalendar();
-  updateTicketsDisplay();
+  updateMealDisplay();
   saveAll();
   calculate();
 }
@@ -2281,8 +2664,22 @@ function showTab(name) {
   if (tabEl) tabEl.classList.add('active');
   const tabs = ['hours','input','tickets','dashboard','deductions','export'];
   const idx = tabs.indexOf(name);
-  if (idx >= 0) document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (idx >= 0) document.querySelectorAll('.tab')[idx]?.classList.add('active');
+  // Bottom nav
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('active');
+    n.setAttribute('aria-selected', 'false');
+  });
+  const navItem = document.querySelector(`.nav-item[data-tab="${name}"]`);
+  if (navItem) {
+    navItem.classList.add('active');
+    navItem.setAttribute('aria-selected', 'true');
+  }
   if (name === 'export' && state.result) updateExportPreview();
+  if (name === 'dashboard') { calculate(); }
+  if (name === 'hours') { updateQuickSummary(); }
+  // Scroll to top on tab change
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ============ CALCULATE ============
@@ -2451,6 +2848,7 @@ function calculate() {
   };
 
   renderDashboard(state.result);
+  updateQuickSummary();
 }
 
 function saveAndCalculate() {
@@ -3025,6 +3423,65 @@ function showExpenseUrlPrompt(payload) {
   showToast('✅ פותח את מנהל ההוצאות...');
 }
 
+// ============ DATA MANAGEMENT ============
+function backupData() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  const tickets = localStorage.getItem(TICKETS_KEY);
+  const ticketsHistory = localStorage.getItem(TICKETS_HISTORY_KEY);
+  const clockState = localStorage.getItem(CLOCK_KEY);
+  const backup = {
+    _version: '2.0',
+    _date: new Date().toISOString(),
+    main: data ? JSON.parse(data) : null,
+    tickets: tickets ? JSON.parse(tickets) : null,
+    ticketsHistory: ticketsHistory ? JSON.parse(ticketsHistory) : null,
+    clockState: clockState ? JSON.parse(clockState) : null,
+    theme: localStorage.getItem('theme')
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `גיבוי_מחשבון_שכר_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.json`;
+  a.click();
+  showToast('💾 גיבוי הורד בהצלחה!');
+}
+
+function restoreData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup._version) { showToast('⚠️ קובץ גיבוי לא תקין'); return; }
+      if (!confirm('שחזור יחליף את כל הנתונים הנוכחיים. להמשיך?')) return;
+      if (backup.main) localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.main));
+      if (backup.tickets) localStorage.setItem(TICKETS_KEY, JSON.stringify(backup.tickets));
+      if (backup.ticketsHistory) localStorage.setItem(TICKETS_HISTORY_KEY, JSON.stringify(backup.ticketsHistory));
+      if (backup.clockState) localStorage.setItem(CLOCK_KEY, JSON.stringify(backup.clockState));
+      if (backup.theme) localStorage.setItem('theme', backup.theme);
+      showToast('✅ שוחזר בהצלחה! טוען מחדש...');
+      setTimeout(() => location.reload(), 1500);
+    } catch(err) {
+      showToast('⚠️ שגיאה בקריאת הקובץ');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function confirmResetAll() {
+  if (!confirm('שים לב! פעולה זו תמחק את כל הנתונים שלך — שעות, שכר, הגדרות והכל.\n\nמומלץ לגבות קודם.\n\nלהמשיך?')) return;
+  if (!confirm('בטוח? זה לא ניתן לשחזור.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(TICKETS_KEY);
+  localStorage.removeItem(TICKETS_HISTORY_KEY);
+  localStorage.removeItem(CLOCK_KEY);
+  localStorage.removeItem('last_active_month');
+  showToast('🗑️ כל הנתונים נמחקו. טוען מחדש...');
+  setTimeout(() => location.reload(), 1500);
+}
+
 // ============ TOAST ============
 // ============ THEME ============
 function toggleTheme() {
@@ -3045,8 +3502,234 @@ function loadTheme() {
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
+  // Auto color based on message type
+  if (msg.includes('⚠️') || msg.includes('שגיאה')) t.style.background = 'var(--orange)';
+  else if (msg.includes('❌')) t.style.background = 'var(--red)';
+  else t.style.background = 'var(--green)';
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  // Haptic feedback on mobile
+  if (navigator.vibrate) navigator.vibrate(30);
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============ QUICK SALARY SUMMARY ============
+function updateQuickSummary() {
+  const card = document.getElementById('quickSalaryCard');
+  if (!card) return;
+  if (state.result && state.result.netSalary > 0) {
+    card.style.display = 'block';
+    const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+    document.getElementById('quickNetSalary').textContent = fmt(state.result.netSalary);
+    // Annual absence tracking
+    const now = new Date();
+    const year = now.getFullYear();
+    let totalVac = 0, totalSick = 0;
+    for (let m = 0; m < 12; m++) {
+      const key = `${year}-${m}`;
+      const absMap = state.dayAbsence[key] || {};
+      Object.values(absMap).forEach(t => {
+        if (t === 'vacation') totalVac++;
+        else if (t === 'sick') totalSick++;
+      });
+    }
+    const qv = document.getElementById('quickVacDays');
+    const qs = document.getElementById('quickSickDays');
+    if (qv) qv.textContent = totalVac;
+    if (qs) qs.textContent = totalSick;
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+// ============ ONBOARDING WIZARD ============
+const ONBOARDING_KEY = 'onboarding_done_v2';
+
+function shouldShowOnboarding() {
+  if (localStorage.getItem(ONBOARDING_KEY)) return false;
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const d = JSON.parse(saved);
+      if (d.formData && d.formData.baseSalary && parseFloat(d.formData.baseSalary) > 0) return false;
+    } catch(e) {}
+  }
+  return true;
+}
+
+function showOnboarding() {
+  if (!shouldShowOnboarding()) return;
+  window._obStep = 0;
+  renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+  let existing = document.getElementById('onboarding-overlay');
+  if (existing) existing.remove();
+
+  const steps = [
+    {
+      icon: '👋',
+      title: 'ברוך הבא למחשבון שכר!',
+      sub: 'האפליקציה הכי מדויקת לחישוב שכר בישראל.\nבוא נגדיר את הנתונים שלך ב-3 צעדים פשוטים.',
+      content: '',
+      btn: 'בוא נתחיל! →'
+    },
+    {
+      icon: '💰',
+      title: 'שכר בסיס',
+      sub: 'כמה את/ה מרוויח/ה ברוטו לחודש?',
+      content: `
+        <div class="field" style="margin-bottom:14px">
+          <div class="field-label">שכר ברוטו חודשי <span>₪</span></div>
+          <input type="number" class="field-input" id="ob-salary" placeholder="למשל: 12000" inputmode="numeric" style="font-size:20px;text-align:center;font-weight:800">
+        </div>
+        <div class="field">
+          <div class="field-label">מין (משפיע על נקודות זיכוי)</div>
+          <div style="display:flex;gap:8px">
+            <button id="ob-gender-male" onclick="obSetGender('male')"
+              style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--accent);background:rgba(79,142,247,0.15);color:var(--accent);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">
+              👨 גבר
+            </button>
+            <button id="ob-gender-female" onclick="obSetGender('female')"
+              style="flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">
+              👩 אישה
+            </button>
+          </div>
+        </div>
+      `,
+      btn: 'המשך →'
+    },
+    {
+      icon: '🍽️',
+      title: 'הטבת ארוחות',
+      sub: 'איזה סוג הטבת אוכל את/ה מקבל/ת?',
+      content: `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+          <button onclick="obSetMeal('tickets')" id="ob-meal-tickets"
+            style="padding:14px 8px;border-radius:12px;border:1.5px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.15);color:var(--yellow);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center">
+            🎫<br>פתקי אוכל
+          </button>
+          <button onclick="obSetMeal('cibus')" id="ob-meal-cibus"
+            style="padding:14px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center">
+            💳<br>סיבוס
+          </button>
+          <button onclick="obSetMeal('tenbis')" id="ob-meal-tenbis"
+            style="padding:14px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center">
+            📱<br>תן ביס
+          </button>
+          <button onclick="obSetMeal('none')" id="ob-meal-none"
+            style="padding:14px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface3);color:var(--text2);font-size:14px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;text-align:center">
+            ❌<br>אין לי
+          </button>
+        </div>
+        <div id="ob-meal-daily-wrap" style="display:none">
+          <div class="field">
+            <div class="field-label">סכום יומי <span>₪</span></div>
+            <input type="number" class="field-input" id="ob-meal-daily" placeholder="50" value="50" inputmode="decimal">
+          </div>
+        </div>
+      `,
+      btn: 'סיים הגדרה ✓'
+    }
+  ];
+
+  const step = steps[window._obStep];
+  const totalSteps = steps.length;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'onboarding-overlay';
+  overlay.className = 'onboarding-overlay';
+
+  let dotsHTML = '';
+  for (let i = 0; i < totalSteps; i++) {
+    const cls = i < window._obStep ? 'onboarding-dot done' : (i === window._obStep ? 'onboarding-dot active' : 'onboarding-dot');
+    dotsHTML += `<div class="${cls}"></div>`;
+  }
+
+  overlay.innerHTML = `
+    <div class="onboarding-card">
+      <div class="onboarding-step-dots">${dotsHTML}</div>
+      <div style="text-align:center;font-size:40px;margin-bottom:12px">${step.icon}</div>
+      <div class="ob-title">${step.title}</div>
+      <div class="ob-sub">${step.sub.replace(/\n/g, '<br>')}</div>
+      ${step.content}
+      <button class="ob-next" onclick="advanceOnboarding()">${step.btn}</button>
+      <button class="ob-skip" onclick="skipOnboarding()">דלג</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+window._obGender = 'male';
+window._obMealType = 'tickets';
+
+function obSetGender(g) {
+  window._obGender = g;
+  const m = document.getElementById('ob-gender-male');
+  const f = document.getElementById('ob-gender-female');
+  if (m) { m.style.borderColor = g === 'male' ? 'var(--accent)' : 'var(--border)'; m.style.background = g === 'male' ? 'rgba(79,142,247,0.15)' : 'var(--surface3)'; m.style.color = g === 'male' ? 'var(--accent)' : 'var(--text2)'; }
+  if (f) { f.style.borderColor = g === 'female' ? 'var(--accent)' : 'var(--border)'; f.style.background = g === 'female' ? 'rgba(79,142,247,0.15)' : 'var(--surface3)'; f.style.color = g === 'female' ? 'var(--accent)' : 'var(--text2)'; }
+}
+
+function obSetMeal(type) {
+  window._obMealType = type;
+  const types = ['tickets','cibus','tenbis','none'];
+  types.forEach(t => {
+    const btn = document.getElementById('ob-meal-' + t);
+    if (!btn) return;
+    const isActive = t === type;
+    btn.style.borderColor = isActive ? 'var(--accent)' : 'var(--border)';
+    btn.style.background = isActive ? 'rgba(79,142,247,0.15)' : 'var(--surface3)';
+    btn.style.color = isActive ? 'var(--accent)' : 'var(--text2)';
+  });
+  const dailyWrap = document.getElementById('ob-meal-daily-wrap');
+  if (dailyWrap) dailyWrap.style.display = (type === 'cibus' || type === 'tenbis') ? 'block' : 'none';
+}
+
+function advanceOnboarding() {
+  if (window._obStep === 1) {
+    // Save salary and gender
+    const sal = document.getElementById('ob-salary');
+    if (sal && sal.value) {
+      const baseEl = document.getElementById('baseSalary');
+      if (baseEl) baseEl.value = sal.value;
+    }
+    const genderEl = document.getElementById('gender');
+    if (genderEl) genderEl.value = window._obGender;
+    updateCreditPoints();
+  }
+
+  if (window._obStep === 2) {
+    // Save meal type
+    if (window._obMealType !== 'none') {
+      state.mealType = window._obMealType;
+      const dailyVal = document.getElementById('ob-meal-daily');
+      if (dailyVal && dailyVal.value) state.mealDailyValue = parseFloat(dailyVal.value) || 50;
+    }
+    // Finish onboarding
+    finishOnboarding();
+    return;
+  }
+
+  window._obStep++;
+  renderOnboardingStep();
+}
+
+function skipOnboarding() {
+  finishOnboarding();
+}
+
+function finishOnboarding() {
+  localStorage.setItem(ONBOARDING_KEY, '1');
+  const overlay = document.getElementById('onboarding-overlay');
+  if (overlay) overlay.remove();
+  saveAll();
+  calculate();
+  initMealBenefits();
+  updateQuickSummary();
+  showToast('🎉 מוכן! מחשבון השכר שלך מוגדר');
 }
 
 // ============ START ============
@@ -3170,9 +3853,10 @@ async function installApp() {
   if (outcome === 'accepted') showToast('🎉 האפליקציה הותקנה!');
 }
 
-// ============ FOOD TICKETS ============
+// ============ FOOD TICKETS / MEAL BENEFITS ============
 const TICKETS_KEY = 'food_tickets_v2';
 const TICKETS_HISTORY_KEY = 'food_tickets_history_v1';
+const MEAL_SETTINGS_KEY = 'meal_settings_v1';
 
 function loadTickets() {
   try {
@@ -3196,6 +3880,116 @@ function saveTicketsHistory(h) {
   try { localStorage.setItem(TICKETS_HISTORY_KEY, JSON.stringify(h.slice(-60))); } catch(e) {}
 }
 
+function saveMealSettings() {
+  const dv = document.getElementById('mealDailyValue');
+  const mm = document.getElementById('mealMonthlyMax');
+  const on = document.getElementById('mealOtherName');
+  state.mealDailyValue = parseFloat(dv?.value) || 0;
+  state.mealMonthlyMax = parseFloat(mm?.value) || 0;
+  state.mealOtherName = on?.value || '';
+  saveAll();
+}
+
+function loadMealSettings() {
+  const dv = document.getElementById('mealDailyValue');
+  const mm = document.getElementById('mealMonthlyMax');
+  const on = document.getElementById('mealOtherName');
+  if (dv && state.mealDailyValue) dv.value = state.mealDailyValue;
+  if (mm && state.mealMonthlyMax) mm.value = state.mealMonthlyMax;
+  if (on && state.mealOtherName) on.value = state.mealOtherName;
+}
+
+// ---- Meal type management ----
+const MEAL_TYPE_CONFIG = {
+  tickets: {
+    icon: '🎫', name: 'פתקי אוכל', color: '#f59e0b', mode: 'tickets',
+    explain: '🎫 פתק אחד לכל יום עבודה שהגעת<br>⭐ פתק בונוס לכל יום בו עבדת 12 שעות ומעלה<br>📅 הנתונים מתאפסים בתחילת כל חודש<br>✅ הכנס ימי עבודה בלשונית <strong>שעות</strong> כדי לראות את הזכאות'
+  },
+  cibus: {
+    icon: '💳', name: 'סיבוס', color: '#4f8ef7', mode: 'card', defaultDaily: 50,
+    explain: '💳 הערך נטען אוטומטית לפי ימי עבודה × סכום יומי<br>🛒 רשום כל הוצאה כדי לעקוב אחרי היתרה<br>📅 היתרה מתאפסת בתחילת כל חודש<br>⚡ הגדר את הסכום היומי בהתאם למה שהמעסיק נותן'
+  },
+  tenbis: {
+    icon: '📱', name: 'תן ביס', color: '#22d17a', mode: 'card', defaultDaily: 50,
+    explain: '📱 תן ביס — הזמנת אוכל באפליקציה<br>💰 הערך נטען לפי ימי עבודה × סכום יומי<br>🏷️ רשום הוצאות כדי לעקוב אחרי מה שנשאר<br>📅 מתאפס בתחילת כל חודש'
+  },
+  other: {
+    icon: '🍴', name: 'אחר', color: '#7c5cfc', mode: 'card', defaultDaily: 0,
+    explain: '🍴 הגדר סוג הטבת ארוחות מותאם אישית<br>💰 הזן שם, סכום יומי ותקרה חודשית<br>📋 עקוב אחרי שימוש ויתרה<br>📅 מתאפס בתחילת כל חודש'
+  }
+};
+
+function setMealType(type) {
+  state.mealType = type;
+  const cfg = MEAL_TYPE_CONFIG[type];
+
+  // Update button styles
+  document.querySelectorAll('#mealTypeGrid button').forEach(btn => {
+    btn.style.borderColor = 'var(--border)';
+    btn.style.background = 'var(--surface3)';
+    btn.style.color = 'var(--text2)';
+  });
+  const activeBtn = document.getElementById('meal-btn-' + type);
+  if (activeBtn) {
+    activeBtn.style.borderColor = cfg.color;
+    activeBtn.style.background = `${cfg.color}20`;
+    activeBtn.style.color = cfg.color;
+  }
+
+  // Show/hide value config
+  const configEl = document.getElementById('mealValueConfig');
+  const customName = document.getElementById('mealCustomName');
+  if (cfg.mode === 'card') {
+    configEl.style.display = 'block';
+    document.getElementById('mealValueLabel').textContent = `${cfg.icon} ערך יומי ב${cfg.name}`;
+    if (type === 'other') {
+      customName.style.display = 'block';
+    } else {
+      customName.style.display = 'none';
+    }
+    // Set default daily value if not set
+    const dv = document.getElementById('mealDailyValue');
+    if (dv && !dv.value && cfg.defaultDaily) dv.value = cfg.defaultDaily;
+  } else {
+    configEl.style.display = 'none';
+  }
+
+  // Update explanation text
+  document.getElementById('mealExplanation').innerHTML = cfg.explain;
+
+  // Show appropriate stats and action sections
+  const statsTickets = document.getElementById('mealStatsTickets');
+  const statsCard = document.getElementById('mealStatsCard');
+  const actionTickets = document.getElementById('mealActionTickets');
+  const actionCard = document.getElementById('mealActionCard');
+
+  if (cfg.mode === 'tickets') {
+    statsTickets.style.display = 'flex';
+    statsCard.style.display = 'none';
+    actionTickets.style.display = 'block';
+    actionCard.style.display = 'none';
+  } else {
+    statsTickets.style.display = 'none';
+    statsCard.style.display = 'block';
+    actionTickets.style.display = 'none';
+    actionCard.style.display = 'block';
+  }
+
+  // Update icon and title
+  document.getElementById('mealStatsIcon').textContent = cfg.icon;
+  const typeName = type === 'other' && state.mealOtherName ? state.mealOtherName : cfg.name;
+  document.getElementById('mealStatsTitle').textContent = `מעקב ${typeName} — החודש`;
+
+  saveMealSettings();
+  updateMealDisplay();
+}
+
+function getMealTypeName() {
+  const cfg = MEAL_TYPE_CONFIG[state.mealType];
+  if (state.mealType === 'other' && state.mealOtherName) return state.mealOtherName;
+  return cfg ? cfg.name : 'ארוחות';
+}
+
 function calcTicketsEarned() {
   const key = `${calYear}-${calMonth}`;
   const hoursMap = state.monthHours[key] || {};
@@ -3205,6 +3999,111 @@ function calcTicketsEarned() {
     if (h > 0) { regular++; if (h >= 12) bonus++; }
   });
   return { regular, bonus, total: regular + bonus };
+}
+
+function calcMealCardLoaded() {
+  const key = `${calYear}-${calMonth}`;
+  const hoursMap = state.monthHours[key] || {};
+  const workDays = Object.keys(hoursMap).filter(d => hoursMap[d] > 0).length;
+  const daily = state.mealDailyValue || 0;
+  let loaded = workDays * daily;
+  if (state.mealMonthlyMax > 0) loaded = Math.min(loaded, state.mealMonthlyMax);
+  return { loaded, workDays, daily };
+}
+
+function getMealSpent() {
+  const key = `${calYear}-${calMonth}`;
+  return state.mealSpending[key] || 0;
+}
+
+function updateMealDisplay() {
+  const cfg = MEAL_TYPE_CONFIG[state.mealType];
+
+  if (cfg.mode === 'tickets') {
+    updateTicketsDisplay();
+    document.getElementById('mealProgressWrap').style.display = 'block';
+    // Progress bar for tickets
+    const earned = calcTicketsEarned();
+    const t = loadTickets();
+    const currentMonthKey = `${calYear}-${calMonth}`;
+    const used = (t.month === currentMonthKey) ? (t.used || 0) : 0;
+    const pct = earned.total > 0 ? Math.round((used / earned.total) * 100) : 0;
+    document.getElementById('mealProgressPct').textContent = pct + '%';
+    document.getElementById('mealProgressLabel').textContent = 'ניצול פתקים';
+    const bar = document.getElementById('mealProgressBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--orange)' : 'var(--green)';
+  } else {
+    // Card mode: cibus, tenbis, other
+    const { loaded, workDays, daily } = calcMealCardLoaded();
+    const spent = getMealSpent();
+    const balance = Math.max(0, loaded - spent);
+    const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+
+    document.getElementById('mealBalance').textContent = fmt(balance);
+    document.getElementById('mealBalance').style.color = balance > 0 ? 'var(--green)' : 'var(--text3)';
+    document.getElementById('mealBalanceLabel').textContent = `יתרה ב${getMealTypeName()}`;
+    document.getElementById('mealBalanceSub').textContent = loaded > 0
+      ? `${workDays} ימי עבודה × ${fmt(daily)} = ${fmt(loaded)} נטען`
+      : 'הגדר סכום יומי כדי לראות יתרה';
+    document.getElementById('mealTotalLoaded').textContent = fmt(loaded);
+    document.getElementById('mealTotalSpent').textContent = fmt(spent);
+
+    // Days left with remaining balance
+    const daysLeft = daily > 0 ? Math.floor(balance / daily) : 0;
+    document.getElementById('mealDaysLeft').textContent = daysLeft;
+
+    // Progress bar
+    document.getElementById('mealProgressWrap').style.display = 'block';
+    const pct = loaded > 0 ? Math.round((spent / loaded) * 100) : 0;
+    document.getElementById('mealProgressPct').textContent = pct + '%';
+    document.getElementById('mealProgressLabel').textContent = 'ניצול תקציב';
+    const bar = document.getElementById('mealProgressBar');
+    bar.style.width = Math.min(100, pct) + '%';
+    bar.style.background = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--orange)' : 'var(--green)';
+
+    // Breakdown text
+    const bd = document.getElementById('ticketsBreakdown');
+    if (bd) {
+      if (loaded > 0) {
+        bd.innerHTML = `<span style="color:var(--text3)">נשאר ${fmt(balance)} מתוך ${fmt(loaded)} — ` +
+          (daysLeft > 0 ? `מספיק ל-${daysLeft} ארוחות` : 'התקציב מוצה') + '</span>';
+      } else {
+        bd.innerHTML = '<span style="color:var(--text3)">הגדר סכום יומי למעלה כדי לעקוב</span>';
+      }
+    }
+
+    // Daily tip
+    updateMealTip(loaded, spent, balance, daily, workDays);
+  }
+}
+
+function updateMealTip(loaded, spent, balance, daily, workDays) {
+  const tipEl = document.getElementById('mealDailyTip');
+  const tipTitle = document.getElementById('mealTipTitle');
+  const tipText = document.getElementById('mealTipText');
+  if (!tipEl || loaded <= 0) { if (tipEl) tipEl.style.display = 'none'; return; }
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const workDaysLeft = Math.max(0, daysInMonth - now.getDate());
+  const avgDailySpend = workDays > 0 ? spent / workDays : 0;
+  const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+
+  tipEl.style.display = 'block';
+  if (balance <= 0) {
+    tipTitle.textContent = '⚠️ התקציב אזל';
+    tipText.textContent = 'כל הוצאה נוספת תהיה מהכיס. שקול לצמצם עד סוף החודש.';
+  } else if (balance < daily * 3) {
+    tipTitle.textContent = '⏳ נשאר מעט';
+    tipText.textContent = `נשאר ${fmt(balance)} — מספיק ל-${Math.floor(balance/daily)} ארוחות בלבד.`;
+  } else if (avgDailySpend > daily * 1.2 && workDays >= 5) {
+    tipTitle.textContent = '📈 קצב גבוה';
+    tipText.textContent = `ממוצע ${fmt(avgDailySpend)} ליום — גבוה מהתקציב (${fmt(daily)}). כדאי לאזן.`;
+  } else {
+    tipTitle.textContent = '✅ מצב תקין';
+    tipText.textContent = `ממוצע ${fmt(avgDailySpend)} ליום. נשאר ${fmt(balance)} עד סוף החודש.`;
+  }
 }
 
 function updateTicketsDisplay() {
@@ -3241,6 +4140,36 @@ function withdrawTickets() {
   const t = loadTickets();
   t.used = (t.used || 0) + val;
   saveTickets(t);
+  const hist = loadTicketsHistory();
+  const now = new Date();
+  hist.push({
+    date: now.toLocaleDateString('he-IL'),
+    dateISO: now.toISOString().slice(0,10),
+    amount: val,
+    type: 'ticket',
+    month: `${now.getFullYear()}-${now.getMonth()}`
+  });
+  saveTicketsHistory(hist);
+  inp.value = 0;
+  updateMealDisplay();
+  showToast(`🎫 נמשכו ${val} פתקים בהצלחה!`);
+}
+
+// ---- Card-based spending ----
+function quickMealSpend(amount) {
+  const inp = document.getElementById('mealSpendInput');
+  if (inp) inp.value = amount;
+}
+
+function logMealSpending() {
+  const inp = document.getElementById('mealSpendInput');
+  const val = parseFloat(inp?.value) || 0;
+  if (val <= 0) { showToast('⚠️ הזן סכום'); return; }
+
+  const key = `${calYear}-${calMonth}`;
+  if (!state.mealSpending[key]) state.mealSpending[key] = 0;
+  state.mealSpending[key] += val;
+
   // Log to history
   const hist = loadTicketsHistory();
   const now = new Date();
@@ -3248,34 +4177,43 @@ function withdrawTickets() {
     date: now.toLocaleDateString('he-IL'),
     dateISO: now.toISOString().slice(0,10),
     amount: val,
+    type: state.mealType,
+    typeName: getMealTypeName(),
     month: `${now.getFullYear()}-${now.getMonth()}`
   });
   saveTicketsHistory(hist);
-  inp.value = 0; // reset after withdrawal
-  updateTicketsDisplay();
-  showToast(`🎫 נמשכו ${val} פתקים בהצלחה!`);
+  if (inp) inp.value = '';
+  saveAll();
+  updateMealDisplay();
+  showToast(`💳 נרשמה הוצאה של ₪${Math.round(val)} ב${getMealTypeName()}`);
 }
 
 function showTicketsHistory() {
   const hist = loadTicketsHistory();
+  const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   const panel = document.createElement('div');
   panel.style.cssText = 'background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:70vh;overflow-y:auto;padding:20px 16px 32px';
 
   let rows = hist.length === 0
-    ? '<div style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px">אין היסטוריית משיכות עדיין</div>'
-    : hist.slice().reverse().map(h =>
-        `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">
+    ? '<div style="text-align:center;color:var(--text3);padding:32px 0;font-size:14px">אין היסטוריה עדיין</div>'
+    : hist.slice().reverse().map(h => {
+        const icon = h.type === 'ticket' ? '🎫' : '💳';
+        const label = h.type === 'ticket' ? `${h.amount} פתקים` : `₪${Math.round(h.amount).toLocaleString('he-IL')}`;
+        const typeLabel = h.typeName || (h.type === 'ticket' ? 'פתקים' : h.type);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">
           <div>
             <div style="font-size:14px;font-weight:700;color:var(--text)">${h.date}</div>
+            <div style="font-size:11px;color:var(--text3)">${typeLabel}</div>
           </div>
-          <div style="font-size:20px;font-weight:900;color:var(--yellow)">🎫 ${h.amount}</div>
-        </div>`).join('');
+          <div style="font-size:18px;font-weight:900;color:var(--yellow)">${icon} ${label}</div>
+        </div>`;
+      }).join('');
 
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:800;color:var(--text)">📋 היסטוריית משיכות</div>
+      <div style="font-size:16px;font-weight:800;color:var(--text)">📋 היסטוריית שימוש</div>
       <button onclick="this.closest('div[style*=fixed]').remove()"
         style="background:var(--surface3);border:none;border-radius:8px;padding:6px 12px;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Heebo',sans-serif">סגור</button>
     </div>
@@ -3283,29 +4221,41 @@ function showTicketsHistory() {
   `;
   overlay.appendChild(panel);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(panel);
-  // Actually append overlay wrapping panel
-  overlay.innerHTML = '';
-  overlay.appendChild(panel);
   document.body.appendChild(overlay);
+}
+
+function initMealBenefits() {
+  loadMealSettings();
+  setMealType(state.mealType || 'tickets');
 }
 
 // ============ SMART NOTIFICATIONS ============
 function getTicketsRemaining() {
-  // חישוב עצמאי — לא תלוי ב-calYear/calMonth
+  // For ticket mode: count remaining tickets
+  if (state.mealType === 'tickets') {
+    const now = new Date();
+    const hoursKey = `${now.getFullYear()}-${now.getMonth()}`;
+    const hoursMap = state.monthHours[hoursKey] || {};
+    let regular = 0, bonus = 0;
+    Object.keys(hoursMap).forEach(d => {
+      const h = parseFloat(hoursMap[d]) || 0;
+      if (h > 0) { regular++; if (h >= 12) bonus++; }
+    });
+    const t = loadTickets();
+    const currentMonthKey = hoursKey;
+    const used = (t.month === currentMonthKey) ? (t.used || 0) : 0;
+    return Math.max(0, regular + bonus - used);
+  }
+  // For card mode: return remaining balance value (as number, ₪)
   const now = new Date();
-  const hoursKey = `${now.getFullYear()}-${now.getMonth()}`;
-  const hoursMap = state.monthHours[hoursKey] || {};
-  let regular = 0, bonus = 0;
-  Object.keys(hoursMap).forEach(d => {
-    const h = parseFloat(hoursMap[d]) || 0;
-    if (h > 0) { regular++; if (h >= 12) bonus++; }
-  });
-  const t = loadTickets();
-  // וודא שה-month key מעודכן
-  const currentMonthKey = hoursKey;
-  const used = (t.month === currentMonthKey) ? (t.used || 0) : 0;
-  return Math.max(0, regular + bonus - used);
+  const key = `${now.getFullYear()}-${now.getMonth()}`;
+  const hoursMap = state.monthHours[key] || {};
+  const workDays = Object.keys(hoursMap).filter(d => hoursMap[d] > 0).length;
+  const daily = state.mealDailyValue || 0;
+  let loaded = workDays * daily;
+  if (state.mealMonthlyMax > 0) loaded = Math.min(loaded, state.mealMonthlyMax);
+  const spent = state.mealSpending[key] || 0;
+  return Math.max(0, loaded - spent);
 }
 
 function checkSmartNotifications() {
@@ -3318,18 +4268,29 @@ function checkSmartNotifications() {
 
   const remaining = getTicketsRemaining();
 
-  // יום חמישי — תזכורת פתקים (תמיד, גם אם remaining=0)
+  // יום חמישי — תזכורת פתקים/ארוחות (תמיד, גם אם remaining=0)
   if (dow === 4) {
-    const msg = remaining > 0
-      ? `נשארו לך <strong>${remaining} פתקי אוכל</strong> למשיכה.<br>סוף שבוע הגיע — אל תשכח לממש!`
-      : `כל הפתקים מומשו החודש. שבוע טוב! 🎉`;
-    const color = remaining > 0 ? '#f59e0b' : '#22d17a';
-    setTimeout(() => showFancyNotif('🎫 תזכורת שבועית', msg, color), 3000);
+    const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
+    const typeName = getMealTypeName();
+    let msg, color;
+    if (isCard) {
+      const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+      msg = remaining > 0
+        ? `נשארו לך <strong>${fmt(remaining)}</strong> ב${typeName}.<br>סוף שבוע הגיע — נצל לפני שהחודש נגמר!`
+        : `כל התקציב ב${typeName} נוצל החודש. שבוע טוב! 🎉`;
+      color = remaining > 0 ? '#f59e0b' : '#22d17a';
+    } else {
+      msg = remaining > 0
+        ? `נשארו לך <strong>${remaining} פתקי אוכל</strong> למשיכה.<br>סוף שבוע הגיע — אל תשכח לממש!`
+        : `כל הפתקים מומשו החודש. שבוע טוב! 🎉`;
+      color = remaining > 0 ? '#f59e0b' : '#22d17a';
+    }
+    setTimeout(() => showFancyNotif('🍽️ תזכורת שבועית', msg, color), 3000);
     localStorage.setItem(notifKey, todayKey);
     return;
   }
 
-  // יום עבודה אחרון של החודש — רק אם יש פתקים שטרם מומשו
+  // יום עבודה אחרון של החודש — רק אם יש פתקים/יתרה שטרם מומשו
   if (remaining > 0) {
     const isLastWorkDay = (() => {
       let d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -3337,9 +4298,12 @@ function checkSmartNotifications() {
       return d.getDate() === now.getDate();
     })();
     if (isLastWorkDay) {
+      const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
+      const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+      const remLabel = isCard ? fmt(remaining) : `${remaining} פתקים`;
       setTimeout(() => showFancyNotif(
         '⚠️ יום עבודה אחרון בחודש!',
-        `נשארו לך <strong>${remaining} פתקים</strong> שיתאפסו מחר!<br>מהר לממש לפני סוף החודש.`,
+        `נשארו לך <strong>${remLabel}</strong> שיתאפסו מחר!<br>מהר לנצל לפני סוף החודש.`,
         '#ef4444'
       ), 3000);
       localStorage.setItem(notifKey, todayKey);
@@ -3370,7 +4334,7 @@ function showFancyNotif(title, body, color) {
     </div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button onclick="showTab('tickets');document.getElementById('fancy-notif').remove()"
-        style="flex:1;padding:9px;background:${color};border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">🎫 לממש פתקים</button>
+        style="flex:1;padding:9px;background:${color};border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">🍽️ ללשונית ארוחות</button>
       <button onclick="document.getElementById('fancy-notif').remove()"
         style="flex:1;padding:9px;background:var(--surface2);border:none;border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">אחר כך</button>
     </div>
@@ -3395,7 +4359,7 @@ function checkMonthlyReset() {
     t.month = currentKey;
     t.used = 0;
     saveTickets(t);
-    showToast('📅 חודש חדש — לוח השעות ופתקי האוכל אופסו!');
+    showToast('📅 חודש חדש — לוח השעות והטבת הארוחות אופסו!');
   }
   localStorage.setItem('last_active_month', currentKey);
 }
@@ -3517,7 +4481,7 @@ function clockOut() {
   saveAll();
   renderHoursCalendar();
   updateClockDisplay();
-  updateTicketsDisplay();
+  updateMealDisplay();
 
   const h = Math.floor(totalHrs);
   const m = Math.round((totalHrs - h) * 60);
@@ -3686,7 +4650,7 @@ function saveClockEdit() {
   state.monthHours[monthKey][dayNum] = Math.round(totalHrs * 100) / 100;
   saveAll();
   renderHoursCalendar();
-  updateTicketsDisplay();
+  updateMealDisplay();
   updateClockDisplay();
   const h = Math.floor(totalHrs), m = Math.round((totalHrs-h)*60);
   const statusEl = document.getElementById('clockEditStatus');
@@ -3705,7 +4669,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Init on page load
 setTimeout(() => {
   startClockTicker();
-  updateTicketsDisplay();
+  updateMealDisplay();
+  initMealBenefits();
   checkMonthlyReset();
   // Pre-fill today's times if saved
   const now = new Date();
@@ -3727,6 +4692,9 @@ setTimeout(() => {
   clockEditUpdateDayLabel();
   enforce24h();
   checkSmartNotifications();
+  updateQuickSummary();
+  // Show onboarding for new users
+  setTimeout(() => showOnboarding(), 800);
 }, 600);
 </script>
 </body>
