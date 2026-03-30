@@ -1,4 +1,4 @@
-const CACHE = 'salary-app-v5';
+const CACHE = 'salary-app-v6';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -16,7 +16,6 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => cache.addAll(ASSETS))
   );
-  // לא קוראים skipWaiting כאן — ממתינים שהמשתמש יאשר עדכון
 });
 
 self.addEventListener('activate', e => {
