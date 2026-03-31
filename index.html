@@ -2,8 +2,11 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>מחשבון שכר</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="description" content="מחשבון שכר ישראלי מקצועי — חישוב נטו מברוטו, מעקב שעות, הטבות ארוחות, מדרגות מס 2026">
+<meta name="keywords" content="מחשבון שכר, חישוב שכר, נטו, ברוטו, מס הכנסה, ביטוח לאומי, ישראל 2026">
+<meta name="author" content="Salary Calculator App">
+<title>מחשבון שכר — חישוב משכורת ישראל 2026</title>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -1100,6 +1103,44 @@
   .salary-change.down { background: rgba(239,68,68,0.15); color: var(--red); }
   .salary-change.same { background: var(--surface3); color: var(--text3); }
 
+  /* Offline indicator */
+  .offline-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--orange);
+    color: #fff;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Heebo', sans-serif;
+    padding: 4px 0;
+    z-index: 99998;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+  .offline-bar.show { transform: translateY(0); }
+
+  /* Rate app prompt */
+  .rate-prompt {
+    position: fixed;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 20px;
+    width: calc(100% - 32px);
+    max-width: 400px;
+    z-index: 9990;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    font-family: 'Heebo', sans-serif;
+  }
+  .rate-prompt.show { transform: translateX(-50%) translateY(0); }
+
   /* Splash Screen */
   .splash-screen {
     position: fixed;
@@ -1221,6 +1262,9 @@
   <div class="splash-sub">חישוב שכר מקצועי · ישראל 2026</div>
   <div class="splash-loader"><div class="splash-loader-bar"></div></div>
 </div>
+
+<!-- Offline Indicator -->
+<div class="offline-bar" id="offlineBar">📡 אין חיבור לאינטרנט — עובד במצב offline</div>
 
 <div class="app">
   <!-- Pull to Refresh Indicator -->
@@ -2058,11 +2102,10 @@
           <div class="section-sub">שמור ושתף את תלוש השכר שלך</div>
         </div>
       </div>
-      <button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,rgba(34,209,122,0.15),rgba(34,209,122,0.08));border-color:rgba(34,209,122,0.5)">📗 ייצוא לאקסל (Excel)</button>
+      <button class="export-btn" onclick="exportExcel()" style="background:linear-gradient(135deg,rgba(34,209,122,0.15),rgba(34,209,122,0.08));border-color:rgba(34,209,122,0.5)">📗 דוח שכר מפורט (Excel)</button>
+      <button class="export-btn" onclick="exportPayslipPDF()" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(239,68,68,0.06));border-color:rgba(239,68,68,0.4)">📄 תלוש שכר (PDF)</button>
       <button class="export-btn" onclick="exportHoursReport()" style="background:linear-gradient(135deg,rgba(79,142,247,0.15),rgba(124,92,252,0.1));border-color:rgba(79,142,247,0.4)">📊 דוח שעות ושכר (טקסט)</button>
-      <button class="export-btn" onclick="exportTxt()">📄 ייצוא תלוש כטקסט</button>
       <button class="export-btn" onclick="copyToClipboard()">📋 העתק ללוח</button>
-      <button class="export-btn" onclick="exportJSON()">💾 ייצוא JSON</button>
       <button class="export-btn" onclick="shareData()">🔗 שתף</button>
       <button class="export-btn" id="sendToExpenseBtn" onclick="sendToExpenseApp()" style="background:linear-gradient(135deg,rgba(249,115,22,0.15),rgba(249,115,22,0.08));border-color:rgba(249,115,22,0.5);color:var(--orange);font-weight:700">💸 שלח לניהול הוצאות</button>
     </div>
@@ -2134,8 +2177,29 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// Lazy-load heavy libraries only when needed
+const CDN_LIBS = {
+  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  chart: 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
+  jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+};
+const _loadedLibs = {};
+function loadLib(name) {
+  if (_loadedLibs[name]) return _loadedLibs[name];
+  _loadedLibs[name] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = CDN_LIBS[name];
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + name));
+    document.head.appendChild(s);
+  });
+  return _loadedLibs[name];
+}
+// Pre-load Chart.js after page is idle (needed for dashboard)
+if ('requestIdleCallback' in window) requestIdleCallback(() => loadLib('chart'));
+else setTimeout(() => loadLib('chart'), 3000);
+</script>
 <script>
 // ============ STATE ============
 const state = {
@@ -2153,6 +2217,63 @@ const state = {
   mealSpendingHistory: [], // [{date, amount, month}]
   result: null
 };
+
+// ============ GLOBAL ERROR HANDLER ============
+window.onerror = function(msg, url, line, col, err) {
+  console.error('App error:', msg, url, line);
+  // Don't show toast for CDN load failures or non-critical errors
+  if (msg && msg.includes && !msg.includes('Script error') && !msg.includes('Loading chunk')) {
+    showToast('⚠️ שגיאה לא צפויה. נסה לרענן.');
+  }
+  return false;
+};
+window.addEventListener('unhandledrejection', e => {
+  console.error('Unhandled promise:', e.reason);
+});
+
+// ============ INPUT VALIDATION ============
+function clampNum(val, min, max, fallback) {
+  const n = parseFloat(val);
+  if (isNaN(n)) return fallback !== undefined ? fallback : 0;
+  return Math.max(min, Math.min(max, n));
+}
+
+function validateSalaryInputs() {
+  const fields = [
+    { id: 'baseSalary', min: 0, max: 200000, fallback: 0 },
+    { id: 'hourlyRate', min: 0, max: 1000, fallback: 0 },
+    { id: 'travel', min: 0, max: 500, fallback: 0 },
+    { id: 'overtime', min: 0, max: 100000, fallback: 0 },
+    { id: 'bonus', min: 0, max: 500000, fallback: 0 },
+    { id: 'other', min: 0, max: 500000, fallback: 0 },
+    { id: 'sickDays', min: 0, max: 31, fallback: 0 },
+    { id: 'unpaidDays', min: 0, max: 31, fallback: 0 },
+    { id: 'creditPoints', min: 0, max: 30, fallback: 2.25 },
+    { id: 'pensionEmployee', min: 0, max: 20, fallback: 6 },
+    { id: 'pensionEmployer', min: 0, max: 20, fallback: 6.5 },
+    { id: 'trainingFund', min: 0, max: 15, fallback: 2.5 },
+    { id: 'trainingFundEmployer', min: 0, max: 15, fallback: 7.5 },
+    { id: 'extraDeduction', min: 0, max: 100000, fallback: 0 },
+    { id: 'holidayDays', min: 0, max: 15, fallback: 0 },
+    { id: 'vacationDays', min: 0, max: 31, fallback: 0 },
+  ];
+  fields.forEach(f => {
+    const el = document.getElementById(f.id);
+    if (!el || el.value === '') return;
+    const clamped = clampNum(el.value, f.min, f.max, f.fallback);
+    if (parseFloat(el.value) !== clamped) el.value = clamped;
+  });
+}
+
+// Add validation on blur for all numeric inputs
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[type="number"]').forEach(el => {
+    el.addEventListener('blur', () => {
+      if (el.min !== '' && el.value !== '' && parseFloat(el.value) < parseFloat(el.min)) el.value = el.min;
+      if (el.max !== '' && el.value !== '' && parseFloat(el.value) > parseFloat(el.max)) el.value = el.max;
+    });
+  });
+});
 
 // ============ PERSISTENCE ============
 const STORAGE_KEY = 'salary_app_v1';
@@ -2182,7 +2303,19 @@ function saveAll() {
     mealSpendingHistory: state.mealSpendingHistory,
     savedAt: Date.now()
   };
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  try {
+    const json = JSON.stringify(data);
+    // Check if approaching quota (~5MB limit)
+    if (json.length > 4 * 1024 * 1024) {
+      console.warn('Storage approaching limit:', (json.length / 1024 / 1024).toFixed(1) + 'MB');
+    }
+    localStorage.setItem(STORAGE_KEY, json);
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      showToast('⚠️ הזיכרון מלא! מומלץ לגבות ולנקות נתונים ישנים');
+    }
+    console.error('Save error:', e);
+  }
 }
 
 function loadAll() {
@@ -2925,6 +3058,8 @@ function showTab(name) {
 
 // ============ CALCULATE ============
 function calculate() {
+  try {
+  validateSalaryInputs();
   const salaryType = document.getElementById('salaryType')?.value || 'monthly';
   let base = parseFloat(document.getElementById('baseSalary').value) || 0;
   const hourlyRate = parseFloat(document.getElementById('hourlyRate')?.value) || 0;
@@ -3110,11 +3245,16 @@ function calculate() {
 
   renderDashboard(state.result);
   updateQuickSummary();
+  } catch(err) {
+    console.error('Calculate error:', err);
+    showToast('⚠️ שגיאה בחישוב. בדוק את הנתונים.');
+  }
 }
 
 function saveAndCalculate() {
   saveAll();
   calculate();
+  incrementCalcCount();
   showToast('✅ השכר חושב בהצלחה!');
   showTab('dashboard');
 }
@@ -3298,7 +3438,11 @@ function renderDashboard(r) {
 
 // ============ CHART ============
 let chartInstance = null;
-function renderChart(r) {
+async function renderChart(r) {
+  try {
+    if (typeof Chart === 'undefined') await loadLib('chart');
+  } catch(e) { return; } // Silently fail chart rendering if offline
+  if (typeof Chart === 'undefined') return;
   const months = ['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
   const now = new Date().getMonth();
   
@@ -3415,86 +3559,394 @@ function updateExportPreview() {
 }
 
 // ============ EXCEL EXPORT ============
-function exportExcel() {
-  if (typeof XLSX === 'undefined') { showToast('⚠️ נא לרענן ולנסות שוב'); return; }
+// ============ EXCEL EXPORT — Professional Styled ============
+async function exportExcel() {
+  try {
+    if (typeof XLSX === 'undefined') {
+      showToast('📦 טוען ספריית Excel...');
+      await loadLib('xlsx');
+    }
+  } catch(e) { showToast('⚠️ לא ניתן לטעון את ספריית Excel. בדוק חיבור אינטרנט.'); return; }
+  if (typeof XLSX === 'undefined') { showToast('⚠️ שגיאה בטעינת XLSX'); return; }
 
   const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const allDayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   const r = state.result;
   const wb = XLSX.utils.book_new();
+  const fmt = n => Math.round(n);
+  const fmtH = h => { const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return `${hh}:${String(mm).padStart(2,'0')}`; };
 
-  // ---- Sheet 1: Hours Detail ----
+  // ---- Sheet 1: Hours Detail with Entry/Exit ----
   const allKeys = Object.keys(state.monthHours).sort();
-  const hoursRows = [['תאריך','יום','שעת כניסה','שעת יציאה','שעות','מהן שעות רגילות','שעות נוספות 125%','שעות נוספות 150%']];
+  const hoursRows = [];
+  hoursRows.push(['דוח שעות עבודה מפורט', '', '', '', '', '', '', '', '']);
+  hoursRows.push(['הופק:', new Date().toLocaleDateString('he-IL'), '', 'שכר בסיס:', r ? '₪'+fmt(r.base).toLocaleString() : '', '', '', '', '']);
+  hoursRows.push([]);
+  hoursRows.push(['תאריך','יום','שעת כניסה','שעת יציאה','סה"כ שעות','שעות רגילות','שעות 125%','שעות 150%','סטטוס']);
 
   allKeys.forEach(key => {
     const [yr, mo] = key.split('-').map(Number);
     const hoursMap = state.monthHours[key] || {};
     const timesMap = (state.dayTimes && state.dayTimes[key]) || {};
+    const absMap = state.dayAbsence[key] || {};
     const firstDay = new Date(yr, mo, 1).getDay();
-    Object.keys(hoursMap).filter(d => hoursMap[d] > 0).map(Number).sort((a,b)=>a-b).forEach(d => {
-      const dow = (firstDay + d - 1) % 7;
-      const isFri = dow === 5;
-      const h = hoursMap[d];
-      const times = timesMap[d] || {};
-      let reg=0, ot125=0, ot150=0;
-      if (isFri) { ot125=Math.min(h,2); ot150=Math.max(0,h-2); }
-      else { reg=Math.min(h,9); const ot=Math.max(0,h-9); ot125=Math.min(ot,2); ot150=Math.max(0,ot-2); }
-      const dateStr = `${d}/${mo+1}/${yr}`;
-      hoursRows.push([dateStr, allDayNames[dow], times.entry||'', times.exit||'', h, reg, ot125, ot150]);
-    });
-    // Total row per month
-    const mHrs = Object.values(hoursMap).reduce((a,b)=>a+(b||0),0);
-    hoursRows.push([`סה"כ ${months[mo]} ${yr}`, '', '', '', mHrs, '', '', '']);
+    const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+
     hoursRows.push([]);
+    hoursRows.push([`${months[mo]} ${yr}`, '', '', '', '', '', '', '', '']);
+
+    let mReg=0, mOt125=0, mOt150=0, mTotal=0, mDays=0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = (firstDay + d - 1) % 7;
+      if (dow === 6) continue;
+      const isFri = dow === 5;
+      const h = hoursMap[d] || 0;
+      const times = timesMap[d] || {};
+      const absType = absMap[d] || '';
+
+      let reg=0, ot125=0, ot150=0, status='';
+      if (absType === 'sick') { status = '🤒 מחלה'; }
+      else if (absType === 'unpaid') { status = '🏖️ חל"ת'; }
+      else if (absType === 'vacation') { status = '🌴 חופש'; }
+      else if (h > 0) {
+        if (isFri) { ot125=Math.min(h,2); ot150=Math.max(0,h-2); status='שישי (ש"נ)'; }
+        else { reg=Math.min(h,9); const ot=Math.max(0,h-9); ot125=Math.min(ot,2); ot150=Math.max(0,ot-2); status=h>=9?'✅ יום מלא':'⚠️ חוסר'; }
+        mReg+=reg; mOt125+=ot125; mOt150+=ot150; mTotal+=h; mDays++;
+      } else if (!isFri) { status = '—'; }
+
+      if (h > 0 || absType) {
+        const dateStr = `${String(d).padStart(2,'0')}/${String(mo+1).padStart(2,'0')}/${yr}`;
+        hoursRows.push([dateStr, allDayNames[dow], times.entry||'—', times.exit||'—',
+          h > 0 ? fmtH(h) : '—', reg > 0 ? fmtH(reg) : '', ot125 > 0 ? fmtH(ot125) : '', ot150 > 0 ? fmtH(ot150) : '', status]);
+      }
+    }
+
+    hoursRows.push([]);
+    hoursRows.push([`סיכום ${months[mo]}`, `${mDays} ימים`, '', '', fmtH(mTotal), fmtH(mReg), fmtH(mOt125), fmtH(mOt150), '']);
   });
 
   const ws1 = XLSX.utils.aoa_to_sheet(hoursRows);
-  ws1['!cols'] = [{wch:12},{wch:8},{wch:10},{wch:10},{wch:8},{wch:16},{wch:16},{wch:16}];
-  // Style header
+  ws1['!cols'] = [{wch:12},{wch:8},{wch:11},{wch:11},{wch:11},{wch:13},{wch:11},{wch:11},{wch:14}];
+  ws1['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}}];
   XLSX.utils.book_append_sheet(wb, ws1, 'שעות עבודה');
 
-  // ---- Sheet 2: Salary Summary ----
+  // ---- Sheet 2: Payslip / Salary Detail ----
   if (r) {
-    const fmt = n => Math.round(n);
-    const salRows = [
-      ['סיכום שכר', ''],
-      ['שכר בסיס', fmt(r.base)],
-      ['נסיעות', fmt(r.travel||0)],
-      ['שעות נוספות', fmt(r.overtime||0)],
-      ['בונוס', fmt(r.bonus||0)],
-      ['ניכוי מחלה נטו', fmt(r.sickNetDeduction||0)],
-      ['ניכוי חל"ת', fmt(r.unpaidDeduction||0)],
-      ['', ''],
-      ['ברוטו לחישוב', fmt(r.grossTotal)],
-      ['', ''],
-      ['מס הכנסה', fmt(r.incomeTax)],
-      ['ביטוח לאומי', fmt(r.bituach||0)],
-      ['מס בריאות', fmt(r.healthTax||0)],
-      ['פנסיה עובד', fmt(r.pensionEmployee||0)],
-      ['קרן השתלמות', fmt(r.trainingEmployee||0)],
-      ['', ''],
-      ['נטו לתשלום', fmt(r.netSalary)],
-      ['שיעור מס אפקטיבי', (r.effectiveRate||0).toFixed(1)+'%'],
-    ];
+    const key0 = `${calYear}-${calMonth}`;
+    const workDays = Object.keys(state.monthHours[key0]||{}).filter(d=>(state.monthHours[key0][d]||0)>0).length;
+    const totalHrs = Object.values(state.monthHours[key0]||{}).reduce((s,h)=>s+(h>0?h:0),0);
+
+    const salRows = [];
+    salRows.push(['תלוש שכר', '', '']);
+    salRows.push([`${months[calMonth]} ${calYear}`, '', '']);
+    salRows.push([]);
+    salRows.push(['פרט', 'סכום (₪)', 'הערות']);
+    salRows.push([]);
+    salRows.push(['=== הכנסות ===', '', '']);
+    salRows.push(['שכר בסיס', fmt(r.base), 'ברוטו חודשי']);
+    if (r.travel > 0) salRows.push(['נסיעות', fmt(r.travel), `${workDays} ימים × ₪${fmt(r.travel/workDays)}`]);
+    if (r.overtime > 0) salRows.push(['שעות נוספות (גלובלי)', fmt(r.overtime), '']);
+    if (r.bonus > 0) salRows.push(['בונוס', fmt(r.bonus), '']);
+    if (r.other > 0) salRows.push(['אחר', fmt(r.other), '']);
+    salRows.push([]);
+    salRows.push(['=== ניכויי היעדרות ===', '', '']);
+    if (r.sickNetDeduction > 0) salRows.push(['ניכוי מחלה (נטו)', '-'+fmt(r.sickNetDeduction), state.sickPolicy==='day1'?'מהיום הראשון':'לפי חוק']);
+    if (r.unpaidDeduction > 0) salRows.push(['ניכוי חל"ת', '-'+fmt(r.unpaidDeduction), '']);
+    if (r.shortHoursDeduction > 0) salRows.push(['ניכוי חוסר שעות', '-'+fmt(r.shortHoursDeduction), '']);
+    salRows.push([]);
+    salRows.push(['ברוטו לחישוב', fmt(r.grossTotal), '']);
+    salRows.push([]);
+    salRows.push(['=== ניכויי חובה ===', '', '']);
+    salRows.push(['מס הכנסה', '-'+fmt(r.incomeTax), `מס אפקטיבי: ${r.effectiveRate.toFixed(1)}%`]);
+    salRows.push(['ביטוח לאומי', '-'+fmt(r.bituach), 'חלק עובד']);
+    salRows.push(['מס בריאות', '-'+fmt(r.healthTax), '']);
+    if (r.pensionEmployee > 0) salRows.push(['פנסיה עובד', '-'+fmt(r.pensionEmployee), `${document.getElementById('pensionEmployee')?.value||6}%`]);
+    if (r.trainingEmployee > 0) salRows.push(['קרן השתלמות', '-'+fmt(r.trainingEmployee), `${document.getElementById('trainingFund')?.value||2.5}%`]);
+    if (r.extraDeduction > 0) salRows.push(['ניכוי נוסף', '-'+fmt(r.extraDeduction), '']);
+    salRows.push([]);
+    salRows.push(['סה"כ ניכויים', '-'+fmt(r.totalDeductions), '']);
+    salRows.push([]);
+    salRows.push(['═══ נטו לתשלום ═══', fmt(r.netSalary), '']);
+    salRows.push([]);
+    salRows.push(['=== שיעורים ===', '', '']);
+    salRows.push(['שכר שעתי (נטו)', '₪'+fmt(r.hourlyNet), '']);
+    salRows.push(['שכר יומי (נטו)', '₪'+fmt(r.dailyNet), '']);
+    salRows.push(['ימי עבודה', workDays, '']);
+    salRows.push(['שעות עבודה', fmtH(totalHrs), '']);
+    salRows.push(['נקודות זיכוי', r.creditPoints, `חיסכון: ₪${fmt(r.creditDeduction)}`]);
+    salRows.push([]);
+    salRows.push(['=== הפרשות מעסיק ===', '', '']);
+    salRows.push(['פנסיה מעסיק', fmt(r.empPension), `${document.getElementById('pensionEmployer')?.value||6.5}%`]);
+    salRows.push(['קרן השתלמות מעסיק', fmt(r.empTraining), `${document.getElementById('trainingFundEmployer')?.value||7.5}%`]);
+    salRows.push(['פיצויים', fmt(r.empSeverance), '8.33%']);
+    salRows.push(['ביטוח לאומי מעסיק', fmt(r.empBituach), '']);
+    salRows.push(['סה"כ עלות מעסיק', fmt(r.totalEmployerCost), '']);
+
     const ws2 = XLSX.utils.aoa_to_sheet(salRows);
-    ws2['!cols'] = [{wch:22},{wch:14}];
-    XLSX.utils.book_append_sheet(wb, ws2, 'סיכום שכר');
+    ws2['!cols'] = [{wch:24},{wch:14},{wch:28}];
+    ws2['!merges'] = [{s:{r:0,c:0},e:{r:0,c:2}}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'תלוש שכר');
   }
 
-  // ---- Sheet 3: Tickets History ----
+  // ---- Sheet 3: Meal Benefits ----
   const hist = loadTicketsHistory();
+  const mealRows = [];
+  mealRows.push(['מעקב הטבת ארוחות', '', '', '']);
+  mealRows.push(['סוג הטבה:', getMealTypeName(), '', '']);
+  mealRows.push([]);
+  mealRows.push(['תאריך', 'סוג', 'כמות/סכום', 'חודש']);
   if (hist.length > 0) {
-    const tickRows = [['תאריך', 'מספר פתקים שנמשכו']];
-    hist.forEach(h => tickRows.push([h.date, h.amount]));
-    const ws3 = XLSX.utils.aoa_to_sheet(tickRows);
-    ws3['!cols'] = [{wch:14},{wch:20}];
-    XLSX.utils.book_append_sheet(wb, ws3, 'פתקי אוכל');
+    hist.forEach(h => {
+      const label = h.type === 'ticket' ? `${h.amount} פתקים` : `₪${Math.round(h.amount)}`;
+      const typeName = h.typeName || (h.type === 'ticket' ? 'פתקים' : h.type);
+      mealRows.push([h.date, typeName, label, h.month || '']);
+    });
+  } else {
+    mealRows.push(['אין נתונים עדיין', '', '', '']);
+  }
+  const ws3 = XLSX.utils.aoa_to_sheet(mealRows);
+  ws3['!cols'] = [{wch:14},{wch:12},{wch:14},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'הטבת ארוחות');
+
+  // ---- Sheet 4: Annual Summary ----
+  const annual = getAnnualAbsence();
+  const annRows = [];
+  annRows.push(['סיכום שנתי ' + new Date().getFullYear(), '', '']);
+  annRows.push([]);
+  annRows.push(['מדד', 'ערך', 'הערה']);
+  annRows.push(['ימי עבודה בפועל', annual.totalWorkDays, '']);
+  annRows.push(['ימי חופשה', annual.vacation, '']);
+  annRows.push(['ימי מחלה', annual.sick, '']);
+  annRows.push(['ימי חל"ת', annual.unpaid, '']);
+  const ws4 = XLSX.utils.aoa_to_sheet(annRows);
+  ws4['!cols'] = [{wch:20},{wch:10},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws4, 'סיכום שנתי');
+
+  const fname = `דוח_שכר_מפורט_${months[calMonth]}_${calYear}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('📗 דוח אקסל מפורט הורד!');
+}
+
+// ============ PDF PAYSLIP ============
+async function exportPayslipPDF() {
+  if (!state.result) { showToast('⚠️ יש לחשב שכר תחילה'); return; }
+  try {
+    if (typeof window.jspdf === 'undefined') {
+      showToast('📦 טוען ספריית PDF...');
+      await loadLib('jspdf');
+    }
+  } catch(e) { showToast('⚠️ לא ניתן לטעון את ספריית PDF. בדוק חיבור אינטרנט.'); return; }
+  if (typeof window.jspdf === 'undefined') { showToast('⚠️ שגיאה בטעינת jsPDF'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const r = state.result;
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const fmt = n => Math.round(n).toLocaleString('he-IL');
+  const fmtH = h => { const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return `${hh}:${String(mm).padStart(2,'0')}`; };
+  const pw = 210, ph = 297; // A4
+
+  // RTL: we draw from the right side
+  const rx = x => pw - x; // mirror x for RTL
+
+  // Colors
+  const BLUE = [79, 142, 247];
+  const GREEN = [34, 209, 122];
+  const RED = [239, 68, 68];
+  const GRAY = [100, 110, 130];
+  const DARK = [30, 36, 51];
+  const LIGHT_BG = [245, 247, 252];
+
+  // ---- Header ----
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, pw, 32, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('Salary Payslip', rx(15), 15, { align: 'right' });
+  doc.setFontSize(11);
+  doc.text(`${months[calMonth]} ${calYear}`, rx(15), 24, { align: 'right' });
+  doc.setFontSize(9);
+  doc.text(new Date().toLocaleDateString('he-IL'), 15, 15);
+  doc.text('Salary Calculator App v2.0', 15, 22);
+
+  let y = 42;
+
+  // ---- Net Salary Hero ----
+  doc.setFillColor(...LIGHT_BG);
+  doc.roundedRect(15, y, pw-30, 28, 4, 4, 'F');
+  doc.setTextColor(...DARK);
+  doc.setFontSize(10);
+  doc.text('NET SALARY', rx(22), y+9, { align: 'right' });
+  doc.setFontSize(22);
+  doc.setTextColor(...GREEN);
+  doc.text(`${fmt(r.netSalary)} ILS`, rx(22), y+22, { align: 'right' });
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAY);
+  doc.text(`Gross: ${fmt(r.grossTotal)} ILS`, 22, y+16);
+  doc.text(`Effective tax: ${r.effectiveRate.toFixed(1)}%`, 22, y+23);
+  y += 36;
+
+  // ---- Helper: draw row ----
+  function drawRow(label, value, isHeader, isTotal, yPos) {
+    if (isHeader) {
+      doc.setFillColor(230, 235, 245);
+      doc.rect(15, yPos-4, pw-30, 7, 'F');
+      doc.setTextColor(...BLUE);
+      doc.setFontSize(9);
+      doc.text(label, rx(20), yPos, { align: 'right' });
+    } else if (isTotal) {
+      doc.setDrawColor(...BLUE);
+      doc.line(15, yPos-5, pw-15, yPos-5);
+      doc.setTextColor(...DARK);
+      doc.setFontSize(11);
+      doc.text(label, rx(20), yPos, { align: 'right' });
+      doc.text(value, 20, yPos);
+    } else {
+      doc.setTextColor(...GRAY);
+      doc.setFontSize(9);
+      doc.text(label, rx(20), yPos, { align: 'right' });
+      doc.setTextColor(...DARK);
+      doc.text(value, 20, yPos);
+    }
+    return yPos + 6.5;
   }
 
-  const fname = `דוח_שכר_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.xlsx`;
-  XLSX.writeFile(wb, fname);
-  showToast('📗 קובץ אקסל הורד!');
+  // ---- Income section ----
+  y = drawRow('INCOME', '', true, false, y);
+  y = drawRow('Base salary', `${fmt(r.base)}`, false, false, y);
+  if (r.travel > 0) y = drawRow('Travel', `${fmt(r.travel)}`, false, false, y);
+  if (r.overtime > 0) y = drawRow('Overtime', `${fmt(r.overtime)}`, false, false, y);
+  if (r.bonus > 0) y = drawRow('Bonus', `${fmt(r.bonus)}`, false, false, y);
+  if (r.other > 0) y = drawRow('Other', `${fmt(r.other)}`, false, false, y);
+  y += 2;
+
+  // ---- Absence deductions ----
+  const hasAbsence = (r.sickNetDeduction||0) + (r.unpaidDeduction||0) + (r.shortHoursDeduction||0) > 0;
+  if (hasAbsence) {
+    y = drawRow('ABSENCE DEDUCTIONS', '', true, false, y);
+    if (r.sickNetDeduction > 0) y = drawRow('Sick leave', `-${fmt(r.sickNetDeduction)}`, false, false, y);
+    if (r.unpaidDeduction > 0) y = drawRow('Unpaid leave', `-${fmt(r.unpaidDeduction)}`, false, false, y);
+    if (r.shortHoursDeduction > 0) y = drawRow('Short hours', `-${fmt(r.shortHoursDeduction)}`, false, false, y);
+    y += 2;
+  }
+
+  y = drawRow('GROSS TOTAL', `${fmt(r.grossTotal)} ILS`, false, true, y);
+  y += 4;
+
+  // ---- Mandatory deductions ----
+  y = drawRow('MANDATORY DEDUCTIONS', '', true, false, y);
+  y = drawRow('Income tax', `-${fmt(r.incomeTax)}`, false, false, y);
+  y = drawRow('National insurance', `-${fmt(r.bituach)}`, false, false, y);
+  y = drawRow('Health tax', `-${fmt(r.healthTax)}`, false, false, y);
+  if (r.pensionEmployee > 0) y = drawRow('Pension (employee)', `-${fmt(r.pensionEmployee)}`, false, false, y);
+  if (r.trainingEmployee > 0) y = drawRow('Training fund', `-${fmt(r.trainingEmployee)}`, false, false, y);
+  if (r.extraDeduction > 0) y = drawRow('Other deduction', `-${fmt(r.extraDeduction)}`, false, false, y);
+  y += 2;
+  y = drawRow('TOTAL DEDUCTIONS', `-${fmt(r.totalDeductions)} ILS`, false, true, y);
+  y += 6;
+
+  // ---- NET SALARY ----
+  doc.setFillColor(...GREEN);
+  doc.roundedRect(15, y-4, pw-30, 12, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12);
+  doc.text('NET SALARY TO PAY', rx(22), y+4, { align: 'right' });
+  doc.text(`${fmt(r.netSalary)} ILS`, 22, y+4);
+  y += 18;
+
+  // ---- Rates ----
+  y = drawRow('RATES', '', true, false, y);
+  y = drawRow('Hourly (net)', `${fmt(r.hourlyNet)} ILS`, false, false, y);
+  y = drawRow('Daily (net)', `${fmt(r.dailyNet)} ILS`, false, false, y);
+  y = drawRow('Credit points', `${r.creditPoints} (${fmt(r.creditDeduction)} ILS)`, false, false, y);
+  y += 4;
+
+  // ---- Employer contributions ----
+  y = drawRow('EMPLOYER CONTRIBUTIONS', '', true, false, y);
+  y = drawRow('Pension (employer)', `${fmt(r.empPension)}`, false, false, y);
+  y = drawRow('Training fund (employer)', `${fmt(r.empTraining)}`, false, false, y);
+  y = drawRow('Severance', `${fmt(r.empSeverance)}`, false, false, y);
+  y = drawRow('NI (employer)', `${fmt(r.empBituach)}`, false, false, y);
+  y += 2;
+  y = drawRow('TOTAL EMPLOYER COST', `${fmt(r.totalEmployerCost)} ILS`, false, true, y);
+
+  // ---- Hours detail on page 2 ----
+  doc.addPage();
+  y = 15;
+  doc.setFillColor(...BLUE);
+  doc.rect(0, 0, pw, 20, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.text('Hours Detail', rx(15), 13, { align: 'right' });
+  y = 28;
+
+  const key0 = `${calYear}-${calMonth}`;
+  const hoursMap = state.monthHours[key0] || {};
+  const timesMap = (state.dayTimes && state.dayTimes[key0]) || {};
+  const absMap = state.dayAbsence[key0] || {};
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const allDayNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Table header
+  doc.setFillColor(230, 235, 245);
+  doc.rect(15, y-4, pw-30, 7, 'F');
+  doc.setTextColor(...BLUE);
+  doc.setFontSize(8);
+  const cols = [rx(18), rx(35), rx(55), rx(75), rx(95), rx(115), rx(135), rx(160)];
+  doc.text('Date', cols[0], y, {align:'right'});
+  doc.text('Day', cols[1], y, {align:'right'});
+  doc.text('In', cols[2], y, {align:'right'});
+  doc.text('Out', cols[3], y, {align:'right'});
+  doc.text('Hours', cols[4], y, {align:'right'});
+  doc.text('Regular', cols[5], y, {align:'right'});
+  doc.text('125%', cols[6], y, {align:'right'});
+  doc.text('150%', cols[7], y, {align:'right'});
+  y += 6;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = (firstDay + d - 1) % 7;
+    if (dow === 6) continue;
+    const isFri = dow === 5;
+    const h = hoursMap[d] || 0;
+    const times = timesMap[d] || {};
+    const absType = absMap[d] || '';
+
+    if (h <= 0 && !absType) continue;
+
+    let reg=0, ot125=0, ot150=0;
+    if (h > 0) {
+      if (isFri) { ot125=Math.min(h,2); ot150=Math.max(0,h-2); }
+      else { reg=Math.min(h,9); const ot=Math.max(0,h-9); ot125=Math.min(ot,2); ot150=Math.max(0,ot-2); }
+    }
+
+    if (y > 275) { doc.addPage(); y = 15; }
+
+    // Alternate row bg
+    if (d % 2 === 0) { doc.setFillColor(250, 250, 255); doc.rect(15, y-3.5, pw-30, 5.5, 'F'); }
+
+    doc.setTextColor(absType ? [...RED] : [...DARK]);
+    doc.setFontSize(8);
+    doc.text(`${d}/${calMonth+1}`, cols[0], y, {align:'right'});
+    doc.text(allDayNames2[dow], cols[1], y, {align:'right'});
+    doc.text(times.entry || (absType||'—'), cols[2], y, {align:'right'});
+    doc.text(times.exit || '', cols[3], y, {align:'right'});
+    doc.text(h > 0 ? fmtH(h) : '', cols[4], y, {align:'right'});
+    doc.text(reg > 0 ? fmtH(reg) : '', cols[5], y, {align:'right'});
+    doc.text(ot125 > 0 ? fmtH(ot125) : '', cols[6], y, {align:'right'});
+    doc.text(ot150 > 0 ? fmtH(ot150) : '', cols[7], y, {align:'right'});
+    y += 5.5;
+  }
+
+  // ---- Footer ----
+  doc.setTextColor(...GRAY);
+  doc.setFontSize(7);
+  doc.text('Generated by Salary Calculator App v2.0 | For estimation purposes only', pw/2, ph-8, { align: 'center' });
+
+  const fname = `Payslip_${months[calMonth]}_${calYear}.pdf`;
+  doc.save(fname);
+  showToast('📄 תלוש שכר PDF הורד!');
 }
 
 // ============ HOURS REPORT ============
@@ -4336,6 +4788,94 @@ function showPrivacyPolicy() {
   `;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+}
+
+// ============ OFFLINE DETECTION ============
+function setupOfflineDetection() {
+  const bar = document.getElementById('offlineBar');
+  if (!bar) return;
+  function updateStatus() {
+    bar.classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+  updateStatus();
+}
+
+// ============ RATE APP PROMPT ============
+const RATE_KEY = 'rate_app_state';
+function checkRatePrompt() {
+  try {
+    const data = JSON.parse(localStorage.getItem(RATE_KEY) || '{}');
+    if (data.dismissed) return;
+    // Show after 7 days of use and at least 10 calculation sessions
+    const firstUse = data.firstUse || Date.now();
+    const calcCount = data.calcCount || 0;
+    if (!data.firstUse) {
+      localStorage.setItem(RATE_KEY, JSON.stringify({ firstUse, calcCount: 0 }));
+      return;
+    }
+    const daysSinceFirst = (Date.now() - firstUse) / (1000 * 60 * 60 * 24);
+    if (daysSinceFirst >= 7 && calcCount >= 10) {
+      showRatePrompt();
+    }
+  } catch(e) {}
+}
+
+function incrementCalcCount() {
+  try {
+    const data = JSON.parse(localStorage.getItem(RATE_KEY) || '{}');
+    data.calcCount = (data.calcCount || 0) + 1;
+    if (!data.firstUse) data.firstUse = Date.now();
+    localStorage.setItem(RATE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function showRatePrompt() {
+  if (document.getElementById('ratePrompt')) return;
+  const el = document.createElement('div');
+  el.className = 'rate-prompt';
+  el.id = 'ratePrompt';
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:28px;margin-bottom:6px">⭐</div>
+      <div style="font-size:16px;font-weight:800;color:var(--text)">אוהב את האפליקציה?</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">דירוג בחנות עוזר לנו להמשיך לפתח</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="rateApp('later')"
+        style="flex:1;padding:10px;background:var(--surface2);border:none;border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif">אחר כך</button>
+      <button onclick="rateApp('never')"
+        style="flex:1;padding:10px;background:var(--surface2);border:none;border-radius:10px;color:var(--text3);font-size:13px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif">לא תודה</button>
+      <button onclick="rateApp('yes')"
+        style="flex:2;padding:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif">⭐ דרג עכשיו</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => { el.classList.add('show'); });
+}
+
+function rateApp(action) {
+  const el = document.getElementById('ratePrompt');
+  if (el) el.remove();
+  if (action === 'yes') {
+    // Opens store page — replace with actual store URL when published
+    const storeUrl = 'https://play.google.com/store/apps/details?id=com.salary.calculator.il';
+    window.open(storeUrl, '_blank');
+  }
+  if (action === 'never' || action === 'yes') {
+    try {
+      const data = JSON.parse(localStorage.getItem(RATE_KEY) || '{}');
+      data.dismissed = true;
+      localStorage.setItem(RATE_KEY, JSON.stringify(data));
+    } catch(e) {}
+  }
+}
+
+// ============ SAFE NUMBER FORMAT ============
+function safeFmt(n) {
+  if (n === undefined || n === null || isNaN(n)) return '₪0';
+  return '₪' + Math.round(n).toLocaleString('he-IL');
 }
 
 // ============ START ============
@@ -5301,6 +5841,7 @@ setTimeout(() => {
   updateQuickSummary();
   setupPullToRefresh();
   setupSwipeCalendar();
+  setupOfflineDetection();
   // Hide splash screen
   setTimeout(() => hideSplash(), 1400);
   // Show onboarding for new users, or what's new for returning users
@@ -5308,6 +5849,8 @@ setTimeout(() => {
     if (shouldShowOnboarding()) showOnboarding();
     else checkWhatsNew();
   }, 1800);
+  // Rate prompt (after 5 seconds)
+  setTimeout(() => checkRatePrompt(), 5000);
 }, 600);
 </script>
 </body>
