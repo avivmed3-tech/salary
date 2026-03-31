@@ -2143,6 +2143,9 @@
       <button class="export-btn" onclick="backupData()" style="border-color:rgba(79,142,247,0.4)">💾 גיבוי כל הנתונים (JSON)</button>
       <button class="export-btn" onclick="document.getElementById('restoreInput').click()">📂 שחזור מגיבוי</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(this)">
+      <div style="background:rgba(79,142,247,0.07);border:1px solid rgba(79,142,247,0.18);border-radius:10px;padding:9px 12px;font-size:11px;color:var(--text3);line-height:1.5;margin-top:2px;text-align:right">
+        💡 לשחזור יש להעלות קובץ <strong style="color:var(--text2)">גיבוי_מחשבון_שכר_...</strong> שנוצר בלחיצה על כפתור הגיבוי למעלה — לא manifest.json או כל קובץ אחר.
+      </div>
       <div style="height:1px;background:var(--border);margin:8px 0"></div>
       <button class="export-btn" onclick="confirmResetAll()" style="border-color:rgba(239,68,68,0.3);color:var(--red)">🗑️ איפוס כל הנתונים</button>
     </div>
@@ -4367,7 +4370,11 @@ function restoreData(input) {
   reader.onload = function(e) {
     try {
       const backup = JSON.parse(e.target.result);
-      if (!backup._version) { showToast('⚠️ קובץ גיבוי לא תקין'); input.value = ''; return; }
+      if (!backup._version) {
+        input.value = '';
+        showInvalidBackupModal(backup);
+        return;
+      }
       // Use custom modal instead of confirm() which is blocked in PWA/iOS
       showRestoreConfirmModal(backup);
     } catch(err) {
@@ -4382,7 +4389,49 @@ function restoreData(input) {
   reader.readAsText(file, 'UTF-8');
 }
 
-function showRestoreConfirmModal(backup) {
+function showInvalidBackupModal(backup) {
+  const existing = document.getElementById('invalid-backup-modal');
+  if (existing) existing.remove();
+
+  // Try to detect what kind of file was uploaded
+  let hint = '';
+  if (backup.name && backup.icons) {
+    hint = '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:14px;text-align:right">זיהינו שהעלית את קובץ <strong>manifest.json</strong> של האפליקציה — זה לא קובץ גיבוי.<br>קובץ הגיבוי נוצר על ידי כפתור ״גיבוי כל הנתונים״.</div>';
+  } else if (backup.formData || backup.main) {
+    hint = '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:14px">הקובץ מכיל נתונים אך חסר שדה גרסה. ייתכן שהוא גיבוי ישן.</div>';
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'invalid-backup-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;max-width:360px;width:100%;animation:fadeUp 0.3s ease;text-align:center">
+      <div style="font-size:42px;margin-bottom:10px">❌</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">קובץ לא מזוהה</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6">זה לא קובץ גיבוי של מחשבון השכר.</div>
+      ${hint}
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;text-align:right">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">איך יוצרים קובץ גיבוי?</div>
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
+          <span style="font-size:12px;color:var(--text3)">עבור לטאב <strong style="color:var(--text)">ייצוא</strong> (⬆️)</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
+          <span style="font-size:12px;color:var(--text3)">לחץ <strong style="color:var(--text)">💾 גיבוי כל הנתונים (JSON)</strong></span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
+          <span style="font-size:12px;color:var(--text3)">שמור את הקובץ שנוצר — <strong style="color:var(--text)">גיבוי_מחשבון_שכר_...</strong></span>
+        </div>
+      </div>
+      <button onclick="document.getElementById('invalid-backup-modal').remove()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;font-family:'Heebo',sans-serif;cursor:pointer">הבנתי</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+
   const existing = document.getElementById('restore-confirm-modal');
   if (existing) existing.remove();
 
