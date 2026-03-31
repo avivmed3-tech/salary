@@ -1014,8 +1014,6 @@
     padding: 6px 12px;
   }
   .ob-skip:hover { color: var(--text2); }
-  .onboarding-card { transition: opacity 0.2s ease; }
-  .onboarding-card.ob-fade { opacity: 0; transform: translateY(6px); }
 
   /* Quick salary summary card on hours tab */
   .salary-quick-card {
@@ -2143,9 +2141,6 @@
       <button class="export-btn" onclick="backupData()" style="border-color:rgba(79,142,247,0.4)">💾 גיבוי כל הנתונים (JSON)</button>
       <button class="export-btn" onclick="document.getElementById('restoreInput').click()">📂 שחזור מגיבוי</button>
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(this)">
-      <div style="background:rgba(79,142,247,0.07);border:1px solid rgba(79,142,247,0.18);border-radius:10px;padding:9px 12px;font-size:11px;color:var(--text3);line-height:1.5;margin-top:2px;text-align:right">
-        💡 לשחזור יש להעלות קובץ <strong style="color:var(--text2)">גיבוי_מחשבון_שכר_...</strong> שנוצר בלחיצה על כפתור הגיבוי למעלה — לא manifest.json או כל קובץ אחר.
-      </div>
       <div style="height:1px;background:var(--border);margin:8px 0"></div>
       <button class="export-btn" onclick="confirmResetAll()" style="border-color:rgba(239,68,68,0.3);color:var(--red)">🗑️ איפוס כל הנתונים</button>
     </div>
@@ -4342,139 +4337,121 @@ function showExpenseUrlPrompt(payload) {
 
 // ============ DATA MANAGEMENT ============
 function backupData() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  const tickets = localStorage.getItem(TICKETS_KEY);
-  const ticketsHistory = localStorage.getItem(TICKETS_HISTORY_KEY);
-  const clockState = localStorage.getItem(CLOCK_KEY);
-  const backup = {
-    _version: '2.0',
-    _date: new Date().toISOString(),
-    main: data ? JSON.parse(data) : null,
-    tickets: tickets ? JSON.parse(tickets) : null,
-    ticketsHistory: ticketsHistory ? JSON.parse(ticketsHistory) : null,
-    clockState: clockState ? JSON.parse(clockState) : null,
-    theme: localStorage.getItem('theme')
-  };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `גיבוי_מחשבון_שכר_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.json`;
-  a.click();
-  showToast('💾 גיבוי הורד בהצלחה!');
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    const tickets = localStorage.getItem(TICKETS_KEY);
+    const ticketsHistory = localStorage.getItem(TICKETS_HISTORY_KEY);
+    const clockState = localStorage.getItem(CLOCK_KEY);
+    
+    // Also save all salary_result_detail keys (for chart history)
+    const chartData = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('salary_result_detail_')) {
+        chartData[k] = localStorage.getItem(k);
+      }
+    }
+    
+    const backup = {
+      _version: '2.0',
+      _date: new Date().toISOString(),
+      main: data ? JSON.parse(data) : null,
+      tickets: tickets ? JSON.parse(tickets) : null,
+      ticketsHistory: ticketsHistory ? JSON.parse(ticketsHistory) : null,
+      clockState: clockState ? JSON.parse(clockState) : null,
+      chartData: chartData,
+      theme: localStorage.getItem('theme'),
+      lastActiveMonth: localStorage.getItem('last_active_month'),
+      rateState: localStorage.getItem('rate_app_state'),
+      lastVersion: localStorage.getItem('last_seen_version')
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `גיבוי_מחשבון_שכר_${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showToast('💾 גיבוי הורד בהצלחה!');
+  } catch(err) {
+    console.error('Backup error:', err);
+    showToast('⚠️ שגיאה ביצירת גיבוי');
+  }
 }
 
 function restoreData(input) {
   const file = input.files[0];
   if (!file) return;
+  
+  // Validate file type
+  if (!file.name.endsWith('.json')) {
+    showToast('⚠️ יש לבחור קובץ JSON');
+    input.value = '';
+    return;
+  }
+  
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const backup = JSON.parse(e.target.result);
-      if (!backup._version) {
-        input.value = '';
-        showInvalidBackupModal(backup);
+      const text = e.target.result;
+      if (!text || text.length < 10) { showToast('⚠️ קובץ ריק'); return; }
+      
+      const backup = JSON.parse(text);
+      
+      // Support both new format (with _version) and raw state format
+      const isNewFormat = backup._version;
+      const isRawFormat = backup.formData || backup.monthHours || backup.toggles;
+      
+      if (!isNewFormat && !isRawFormat) {
+        showToast('⚠️ קובץ גיבוי לא תקין — לא נמצאו נתונים');
         return;
       }
-      // Use custom modal instead of confirm() which is blocked in PWA/iOS
-      showRestoreConfirmModal(backup);
+      
+      // Show confirmation
+      const dateStr = backup._date ? new Date(backup._date).toLocaleDateString('he-IL') : 'לא ידוע';
+      const msg = isNewFormat
+        ? `לשחזר גיבוי מתאריך ${dateStr}?\nכל הנתונים הנוכחיים יוחלפו.`
+        : 'זוהה קובץ state ישן. לשחזר?';
+      
+      if (!confirm(msg)) return;
+      
+      if (isNewFormat) {
+        // New format — restore each key
+        if (backup.main) localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.main));
+        if (backup.tickets) localStorage.setItem(TICKETS_KEY, JSON.stringify(backup.tickets));
+        if (backup.ticketsHistory) localStorage.setItem(TICKETS_HISTORY_KEY, JSON.stringify(backup.ticketsHistory));
+        if (backup.clockState) localStorage.setItem(CLOCK_KEY, JSON.stringify(backup.clockState));
+        if (backup.theme) localStorage.setItem('theme', backup.theme);
+        if (backup.lastActiveMonth) localStorage.setItem('last_active_month', backup.lastActiveMonth);
+        if (backup.rateState) localStorage.setItem('rate_app_state', backup.rateState);
+        if (backup.lastVersion) localStorage.setItem('last_seen_version', backup.lastVersion);
+        // Restore chart history
+        if (backup.chartData) {
+          Object.entries(backup.chartData).forEach(([k, v]) => {
+            try { localStorage.setItem(k, v); } catch(e) {}
+          });
+        }
+      } else {
+        // Raw state format — save directly as main state
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(backup));
+      }
+      
+      showToast('✅ שוחזר בהצלחה! טוען מחדש...');
+      setTimeout(() => location.reload(), 1200);
     } catch(err) {
-      showToast('⚠️ שגיאה בקריאת הקובץ — ודא שזה קובץ גיבוי תקין');
+      console.error('Restore error:', err);
+      showToast('⚠️ שגיאה בקריאת הקובץ: ' + (err.message || 'פורמט לא תקין'));
     }
-    input.value = '';
   };
+  
   reader.onerror = function() {
-    showToast('⚠️ לא ניתן לקרוא את הקובץ');
-    input.value = '';
+    showToast('⚠️ שגיאה בקריאת הקובץ');
   };
-  reader.readAsText(file, 'UTF-8');
-}
-
-function showInvalidBackupModal(backup) {
-  const existing = document.getElementById('invalid-backup-modal');
-  if (existing) existing.remove();
-
-  // Try to detect what kind of file was uploaded
-  let hint = '';
-  if (backup.name && backup.icons) {
-    hint = '<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:14px;text-align:right">זיהינו שהעלית את קובץ <strong>manifest.json</strong> של האפליקציה — זה לא קובץ גיבוי.<br>קובץ הגיבוי נוצר על ידי כפתור ״גיבוי כל הנתונים״.</div>';
-  } else if (backup.formData || backup.main) {
-    hint = '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:14px">הקובץ מכיל נתונים אך חסר שדה גרסה. ייתכן שהוא גיבוי ישן.</div>';
-  }
-
-  const modal = document.createElement('div');
-  modal.id = 'invalid-backup-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;max-width:360px;width:100%;animation:fadeUp 0.3s ease;text-align:center">
-      <div style="font-size:42px;margin-bottom:10px">❌</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">קובץ לא מזוהה</div>
-      <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6">זה לא קובץ גיבוי של מחשבון השכר.</div>
-      ${hint}
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;text-align:right">
-        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">איך יוצרים קובץ גיבוי?</div>
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
-          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
-          <span style="font-size:12px;color:var(--text3)">עבור לטאב <strong style="color:var(--text)">ייצוא</strong> (⬆️)</span>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
-          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
-          <span style="font-size:12px;color:var(--text3)">לחץ <strong style="color:var(--text)">💾 גיבוי כל הנתונים (JSON)</strong></span>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <span style="background:var(--accent);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
-          <span style="font-size:12px;color:var(--text3)">שמור את הקובץ שנוצר — <strong style="color:var(--text)">גיבוי_מחשבון_שכר_...</strong></span>
-        </div>
-      </div>
-      <button onclick="document.getElementById('invalid-backup-modal').remove()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;font-family:'Heebo',sans-serif;cursor:pointer">הבנתי</button>
-    </div>
-  `;
-  document.body.appendChild(modal);
-}
-
-
-  const existing = document.getElementById('restore-confirm-modal');
-  if (existing) existing.remove();
-
-  const dateStr = backup._date ? new Date(backup._date).toLocaleDateString('he-IL', { year:'numeric', month:'long', day:'numeric' }) : 'לא ידוע';
-
-  const modal = document.createElement('div');
-  modal.id = 'restore-confirm-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;max-width:360px;width:100%;animation:fadeUp 0.3s ease;text-align:center">
-      <div style="font-size:42px;margin-bottom:12px">📂</div>
-      <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:8px">שחזור גיבוי</div>
-      <div style="font-size:13px;color:var(--text3);margin-bottom:6px;line-height:1.5">
-        נמצא גיבוי מתאריך:<br>
-        <span style="font-weight:700;color:var(--accent)">${dateStr}</span>
-      </div>
-      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:12px;margin:16px 0;font-size:13px;color:var(--red);line-height:1.5">
-        ⚠️ שחזור יחליף את <strong>כל הנתונים הנוכחיים</strong> שלך. פעולה זו אינה ניתנת לביטול.
-      </div>
-      <button onclick="doRestore(window._pendingBackup)" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;font-family:'Heebo',sans-serif;cursor:pointer;margin-bottom:10px">✅ כן, שחזר עכשיו</button>
-      <button onclick="document.getElementById('restore-confirm-modal').remove()" style="width:100%;padding:12px;background:var(--surface3);border:1px solid var(--border);border-radius:12px;color:var(--text2);font-size:14px;font-weight:700;font-family:'Heebo',sans-serif;cursor:pointer">ביטול</button>
-    </div>
-  `;
-  window._pendingBackup = backup;
-  document.body.appendChild(modal);
-}
-
-function doRestore(backup) {
-  try {
-    if (!backup) { showToast('⚠️ שגיאה — נסה שוב'); return; }
-    if (backup.main) localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.main));
-    if (backup.tickets) localStorage.setItem(TICKETS_KEY, JSON.stringify(backup.tickets));
-    if (backup.ticketsHistory) localStorage.setItem(TICKETS_HISTORY_KEY, JSON.stringify(backup.ticketsHistory));
-    if (backup.clockState) localStorage.setItem(CLOCK_KEY, JSON.stringify(backup.clockState));
-    if (backup.theme) localStorage.setItem('theme', backup.theme);
-    window._pendingBackup = null;
-    const modal = document.getElementById('restore-confirm-modal');
-    if (modal) modal.remove();
-    showToast('✅ שוחזר בהצלחה! טוען מחדש...');
-    setTimeout(() => location.reload(), 1500);
-  } catch(err) {
-    showToast('⚠️ שגיאה בשחזור — נסה שוב');
-  }
+  
+  reader.readAsText(file);
+  // Reset input AFTER read completes, not before
+  reader.onloadend = function() { input.value = ''; };
 }
 
 function confirmResetAll() {
@@ -4655,200 +4632,22 @@ function shouldShowOnboarding() {
 function showOnboarding() {
   if (!shouldShowOnboarding()) return;
   window._obStep = 0;
-  window._obGender = 'male';
-  window._obMealType = 'tickets';
   renderOnboardingStep();
 }
 
-// ============ ONBOARDING — FULL FEATURE TOUR + SETUP ============
-// Phase A (steps 0–5): visual feature tour
-// Phase B (steps 6–8): quick setup (salary, gender, meal)
-// Total: 9 steps
+function renderOnboardingStep() {
+  let existing = document.getElementById('onboarding-overlay');
+  if (existing) existing.remove();
 
-function getOnboardingSteps() {
-  return [
-    // ── PHASE A: Feature Tour ──────────────────────────────────────
+  const steps = [
     {
-      phase: 'tour',
       icon: '👋',
-      title: 'ברוכים הבאים!',
-      sub: 'מחשבון השכר המדויק ביותר לישראל 2026\nבוא נכיר את כל הפיצ\'רים — לוקח פחות מדקה',
-      visual: `
-        <div style="background:linear-gradient(135deg,rgba(79,142,247,0.12),rgba(124,92,252,0.12));border:1px solid rgba(79,142,247,0.25);border-radius:16px;padding:18px;margin-bottom:4px">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#4F8EF7,#7C5CFC);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">₪</div>
-            <div style="text-align:right">
-              <div style="font-weight:800;font-size:15px;color:var(--text)">חישוב שכר נטו מדויק</div>
-              <div style="font-size:12px;color:var(--text3)">מס הכנסה · ביטוח לאומי · בריאות · פנסיה</div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <div style="background:rgba(79,142,247,0.1);border-radius:10px;padding:10px 6px;text-align:center">
-              <div style="font-size:18px;margin-bottom:3px">🕐</div>
-              <div style="font-size:11px;font-weight:700;color:var(--text2)">מעקב שעות</div>
-            </div>
-            <div style="background:rgba(34,209,122,0.1);border-radius:10px;padding:10px 6px;text-align:center">
-              <div style="font-size:18px;margin-bottom:3px">📊</div>
-              <div style="font-size:11px;font-weight:700;color:var(--text2)">גרפים חיים</div>
-            </div>
-            <div style="background:rgba(245,158,11,0.1);border-radius:10px;padding:10px 6px;text-align:center">
-              <div style="font-size:18px;margin-bottom:3px">💾</div>
-              <div style="font-size:11px;font-weight:700;color:var(--text2)">גיבוי מלא</div>
-            </div>
-          </div>
-        </div>`,
-      btn: 'בוא נסייר! →',
-      skipLabel: 'דלג לסיום הגדרה'
+      title: 'ברוך הבא למחשבון שכר!',
+      sub: 'האפליקציה הכי מדויקת לחישוב שכר בישראל.\nבוא נגדיר את הנתונים שלך ב-3 צעדים פשוטים.',
+      content: '',
+      btn: 'בוא נתחיל! →'
     },
     {
-      phase: 'tour',
-      icon: '🧮',
-      title: 'חישוב שכר חכם',
-      sub: 'הזן את הנתונים שלך — האפליקציה מחשבת הכל לפי חוק',
-      visual: `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:4px">
-          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;color:var(--text3);font-weight:600">שכר ברוטו</span>
-            <span style="font-size:16px;font-weight:800;color:var(--text)">₪12,000</span>
-          </div>
-          <div style="padding:10px 14px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--text3)">מס הכנסה</span>
-              <span style="font-size:12px;color:var(--red);font-weight:700">−₪890</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--text3)">ביטוח לאומי</span>
-              <span style="font-size:12px;color:var(--red);font-weight:700">−₪420</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-              <span style="font-size:12px;color:var(--text3)">פנסיה עובד</span>
-              <span style="font-size:12px;color:var(--red);font-weight:700">−₪720</span>
-            </div>
-            <div style="height:1px;background:var(--border);margin:8px 0"></div>
-            <div style="display:flex;justify-content:space-between">
-              <span style="font-size:13px;font-weight:800;color:var(--green)">שכר נטו</span>
-              <span style="font-size:16px;font-weight:900;color:var(--green)">₪9,970</span>
-            </div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">✨ כולל נקודות זיכוי, קרן השתלמות, נסיעות ועוד</div>`,
-      btn: 'הבא →',
-      skipLabel: 'דלג'
-    },
-    {
-      phase: 'tour',
-      icon: '🕐',
-      title: 'מעקב שעות חודשי',
-      sub: 'תיעוד שעות כניסה/יציאה עם חישוב שעות נוספות אוטומטי',
-      visual: `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:4px">
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px">
-            ${['א','ב','ג','ד','ה','ו','ש'].map(d=>`<div style="text-align:center;font-size:10px;color:var(--text3);font-weight:600;padding:4px 0">${d}</div>`).join('')}
-            ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(d=>{
-              const colors = {3:'rgba(34,209,122,0.25)',7:'rgba(34,209,122,0.25)',10:'rgba(245,158,11,0.25)',4:'rgba(34,209,122,0.25)'};
-              const bg = colors[d] || 'var(--surface3)';
-              const hrs = {3:'8.5',7:'9.0',10:'10h',4:'8.0'}[d] || '';
-              return `<div style="background:${bg};border-radius:6px;padding:5px 2px;text-align:center"><div style="font-size:11px;font-weight:700;color:var(--text)">${d}</div>${hrs?`<div style="font-size:9px;color:var(--text3)">${hrs}</div>`:''}</div>`;
-            }).join('')}
-          </div>
-          <div style="display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:10px">
-            <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--accent)">172.5</div><div style="font-size:10px;color:var(--text3)">שעות רגילות</div></div>
-            <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--yellow)">12.0</div><div style="font-size:10px;color:var(--text3)">נוספות 125%</div></div>
-            <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--red)">3.5</div><div style="font-size:10px;color:var(--text3)">נוספות 150%</div></div>
-          </div>
-        </div>`,
-      btn: 'הבא →',
-      skipLabel: 'דלג'
-    },
-    {
-      phase: 'tour',
-      icon: '📊',
-      title: 'גרפים וסטטיסטיקות',
-      sub: 'ויזואליזציה מלאה של ניכויים, היסטוריה חודשית ומגמות',
-      visual: `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:4px">
-          <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:10px;text-align:center">התפלגות שכר חודשי</div>
-          <div style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-bottom:10px">
-            ${[65,72,68,80,75,83,78].map((h,i)=>{
-              const isLast = i===6;
-              const color = isLast ? 'linear-gradient(180deg,#4F8EF7,#7C5CFC)' : 'var(--surface3)';
-              return `<div style="flex:1;background:${color};border-radius:5px 5px 0 0;height:${h}%"></div>`;
-            }).join('')}
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)"><span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block"></span>נטו</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)"><span style="width:8px;height:8px;background:var(--red);border-radius:50%;display:inline-block"></span>מסים</div>
-            <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3)"><span style="width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block"></span>פנסיה</div>
-          </div>
-        </div>`,
-      btn: 'הבא →',
-      skipLabel: 'דלג'
-    },
-    {
-      phase: 'tour',
-      icon: '🎫',
-      title: 'ניהול פתקי אוכל',
-      sub: 'עקוב אחר פתקי האוכל שלך — כמה הרווחת וכמה השתמשת',
-      visual: `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:4px">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-            <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:12px;text-align:center">
-              <div style="font-size:20px;font-weight:900;color:var(--yellow)">18</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">הרווחת</div>
-            </div>
-            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:12px;text-align:center">
-              <div style="font-size:20px;font-weight:900;color:var(--red)">12</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">השתמשת</div>
-            </div>
-            <div style="background:rgba(34,209,122,0.12);border:1px solid rgba(34,209,122,0.3);border-radius:12px;padding:12px;text-align:center">
-              <div style="font-size:20px;font-weight:900;color:var(--green)">6</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">נותרו</div>
-            </div>
-          </div>
-          <div style="background:var(--surface3);border-radius:8px;height:8px;overflow:hidden">
-            <div style="width:67%;height:100%;background:linear-gradient(90deg,var(--yellow),var(--orange));border-radius:8px"></div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">12 מתוך 18 פתקים בשימוש החודש</div>
-        </div>`,
-      btn: 'הבא →',
-      skipLabel: 'דלג'
-    },
-    {
-      phase: 'tour',
-      icon: '💾',
-      title: 'גיבוי ושחזור',
-      sub: 'שמור את כל הנתונים שלך בקובץ JSON ושחזר בכל עת',
-      visual: `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:4px">
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:center;gap:10px;background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:10px;padding:10px 12px">
-              <span style="font-size:20px">💾</span>
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text)">גיבוי כל הנתונים</div>
-                <div style="font-size:11px;color:var(--text3)">שמור קובץ JSON למכשיר שלך</div>
-              </div>
-              <div style="margin-right:auto;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px">גיבוי</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;background:rgba(34,209,122,0.08);border:1px solid rgba(34,209,122,0.2);border-radius:10px;padding:10px 12px">
-              <span style="font-size:20px">📂</span>
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text)">שחזור מגיבוי</div>
-                <div style="font-size:11px;color:var(--text3)">טען קובץ גיבוי קיים</div>
-              </div>
-              <div style="margin-right:auto;background:var(--green);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px">שחזר</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 4px">
-              <span style="font-size:14px">📤</span><span style="font-size:12px;color:var(--text3)">ייצוא Excel · טקסט · שיתוף</span>
-              <span style="font-size:14px;margin-right:auto">📗</span>
-            </div>
-          </div>
-        </div>`,
-      btn: 'מעולה! נגדיר עכשיו →',
-      skipLabel: 'דלג לסיום'
-    },
-    // ── PHASE B: Setup ─────────────────────────────────────────────
-    {
-      phase: 'setup',
       icon: '💰',
       title: 'שכר בסיס',
       sub: 'כמה את/ה מרוויח/ה ברוטו לחודש?',
@@ -4869,12 +4668,11 @@ function getOnboardingSteps() {
               👩 אישה
             </button>
           </div>
-        </div>`,
-      btn: 'המשך →',
-      skipLabel: 'דלג'
+        </div>
+      `,
+      btn: 'המשך →'
     },
     {
-      phase: 'setup',
       icon: '🍽️',
       title: 'הטבת ארוחות',
       sub: 'איזה סוג הטבת אוכל את/ה מקבל/ת?',
@@ -4902,82 +4700,37 @@ function getOnboardingSteps() {
             <div class="field-label">סכום יומי <span>₪</span></div>
             <input type="number" class="field-input" id="ob-meal-daily" placeholder="50" value="50" inputmode="decimal">
           </div>
-        </div>`,
-      btn: 'סיים הגדרה ✓',
-      skipLabel: 'דלג'
-    },
-    {
-      phase: 'done',
-      icon: '🎉',
-      title: 'הכל מוכן!',
-      sub: 'המחשבון שלך מוגדר ומוכן לשימוש.\nתוכל לשנות כל הגדרה בכל עת.',
-      visual: `
-        <div style="background:linear-gradient(135deg,rgba(34,209,122,0.12),rgba(79,142,247,0.1));border:1px solid rgba(34,209,122,0.3);border-radius:16px;padding:16px;margin-bottom:4px">
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-size:16px">✅</span><span style="font-size:13px;font-weight:600;color:var(--text)">לחץ "חשב שכר" בטאב הראשי</span></div>
-            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-size:16px">✅</span><span style="font-size:13px;font-weight:600;color:var(--text)">הוסף שעות בלוח השנה</span></div>
-            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-size:16px">✅</span><span style="font-size:13px;font-weight:600;color:var(--text)">גבה נתונים בטאב הייצוא</span></div>
-            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-size:16px">✅</span><span style="font-size:13px;font-weight:600;color:var(--text)">עקוב אחר פתקי האוכל שלך</span></div>
-          </div>
-        </div>`,
-      btn: 'מתחילים! 🚀',
-      skipLabel: null
+        </div>
+      `,
+      btn: 'סיים הגדרה ✓'
     }
   ];
-}
 
-function renderOnboardingStep() {
-  let existing = document.getElementById('onboarding-overlay');
-  if (existing) existing.remove();
-
-  const steps = getOnboardingSteps();
   const step = steps[window._obStep];
   const totalSteps = steps.length;
-
-  // Separate dots for tour phase (0-5) and setup phase (6-8)
-  const tourCount = steps.filter(s => s.phase === 'tour').length;
-  const setupCount = steps.filter(s => s.phase === 'setup').length + 1; // +done
-  const isTour = step.phase === 'tour';
-  const isSetup = step.phase === 'setup' || step.phase === 'done';
-
-  // Build dots for current phase
-  let dotsHTML = '';
-  if (isTour) {
-    const tourIdx = window._obStep;
-    for (let i = 0; i < tourCount; i++) {
-      const cls = i < tourIdx ? 'onboarding-dot done' : (i === tourIdx ? 'onboarding-dot active' : 'onboarding-dot');
-      dotsHTML += `<div class="${cls}"></div>`;
-    }
-  } else {
-    const setupIdx = window._obStep - tourCount;
-    for (let i = 0; i < setupCount; i++) {
-      const cls = i < setupIdx ? 'onboarding-dot done' : (i === setupIdx ? 'onboarding-dot active' : 'onboarding-dot');
-      dotsHTML += `<div class="${cls}"></div>`;
-    }
-  }
-
-  // Phase label
-  const phaseLabel = isTour
-    ? `<div style="display:inline-block;background:rgba(79,142,247,0.15);border:1px solid rgba(79,142,247,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:14px">סיור פיצ'רים ${window._obStep + 1}/${tourCount}</div>`
-    : `<div style="display:inline-block;background:rgba(34,209,122,0.12);border:1px solid rgba(34,209,122,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--green);margin-bottom:14px">הגדרה מהירה</div>`;
-
-  const visualOrContent = step.visual || step.content || '';
 
   const overlay = document.createElement('div');
   overlay.id = 'onboarding-overlay';
   overlay.className = 'onboarding-overlay';
+
+  let dotsHTML = '';
+  for (let i = 0; i < totalSteps; i++) {
+    const cls = i < window._obStep ? 'onboarding-dot done' : (i === window._obStep ? 'onboarding-dot active' : 'onboarding-dot');
+    dotsHTML += `<div class="${cls}"></div>`;
+  }
+
   overlay.innerHTML = `
-    <div class="onboarding-card" style="max-width:420px">
+    <div class="onboarding-card">
       <div class="onboarding-step-dots">${dotsHTML}</div>
-      <div style="text-align:center">${phaseLabel}</div>
-      <div style="text-align:center;font-size:42px;margin-bottom:10px">${step.icon}</div>
+      <div style="text-align:center;font-size:40px;margin-bottom:12px">${step.icon}</div>
       <div class="ob-title">${step.title}</div>
       <div class="ob-sub">${step.sub.replace(/\n/g, '<br>')}</div>
-      ${visualOrContent}
+      ${step.content}
       <button class="ob-next" onclick="advanceOnboarding()">${step.btn}</button>
-      ${step.skipLabel ? `<button class="ob-skip" onclick="skipOnboarding()">${step.skipLabel}</button>` : ''}
+      <button class="ob-skip" onclick="skipOnboarding()">דלג</button>
     </div>
   `;
+
   document.body.appendChild(overlay);
 }
 
@@ -5008,11 +4761,8 @@ function obSetMeal(type) {
 }
 
 function advanceOnboarding() {
-  const steps = getOnboardingSteps();
-  const step = steps[window._obStep];
-
-  // Save salary + gender on setup step 6
-  if (step.phase === 'setup' && window._obStep === steps.findIndex(s => s.icon === '💰' && s.phase === 'setup')) {
+  if (window._obStep === 1) {
+    // Save salary and gender
     const sal = document.getElementById('ob-salary');
     if (sal && sal.value) {
       const baseEl = document.getElementById('baseSalary');
@@ -5023,55 +4773,23 @@ function advanceOnboarding() {
     updateCreditPoints();
   }
 
-  // Save meal on setup step 7
-  if (step.phase === 'setup' && step.icon === '🍽️') {
+  if (window._obStep === 2) {
+    // Save meal type
     if (window._obMealType !== 'none') {
       state.mealType = window._obMealType;
       const dailyVal = document.getElementById('ob-meal-daily');
       if (dailyVal && dailyVal.value) state.mealDailyValue = parseFloat(dailyVal.value) || 50;
     }
-  }
-
-  // Done step — finish
-  if (step.phase === 'done') {
+    // Finish onboarding
     finishOnboarding();
     return;
   }
 
   window._obStep++;
-  // Short fade-out before rendering next step
-  const card = document.querySelector('.onboarding-card');
-  if (card) {
-    card.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(8px)';
-    setTimeout(() => renderOnboardingStep(), 180);
-  } else {
-    renderOnboardingStep();
-  }
+  renderOnboardingStep();
 }
 
 function skipOnboarding() {
-  const steps = getOnboardingSteps();
-  const currentStep = steps[window._obStep];
-  // If skipping from tour, jump to setup phase
-  if (currentStep && currentStep.phase === 'tour') {
-    const setupIdx = steps.findIndex(s => s.phase === 'setup');
-    if (setupIdx !== -1) {
-      window._obStep = setupIdx;
-      const card = document.querySelector('.onboarding-card');
-      if (card) {
-        card.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(8px)';
-        setTimeout(() => renderOnboardingStep(), 180);
-      } else {
-        renderOnboardingStep();
-      }
-      return;
-    }
-  }
-  // Otherwise finish
   finishOnboarding();
 }
 
