@@ -1411,8 +1411,8 @@
         <div class="field">
           <div class="field-label">מין</div>
           <select class="field-input" id="gender">
-            <option value="male">גבר (2.25)</option>
-            <option value="female">אישה (2.75)</option>
+            <option value="male">גבר</option>
+            <option value="female">אישה</option>
           </select>
         </div>
         <div class="field">
@@ -1435,13 +1435,22 @@
         <div id="childrenPointsBreakdown" style="margin-top:10px;font-size:11px;color:var(--text3);line-height:1.8"></div>
       </div>
 
-      <!-- נקודת תושב -->
+      <!-- חייל משוחרר -->
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:10px">
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">נקודת זיכוי בגין תושב ישראל</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">2.25 נ"ז — לפי סעיף 34 לפקודת מס הכנסה</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">חייל/ת משוחרר/ת</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">2 נ"ז למשך 36 חודשים מהשחרור</div>
         </div>
-        <div id="toggle-resident" class="toggle on" onclick="toggleResident()" style="flex-shrink:0"></div>
+        <div id="toggle-soldier" class="toggle" onclick="toggleSoldier()" style="flex-shrink:0"></div>
+      </div>
+
+      <!-- שירות לאומי -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-top:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">שירות לאומי / אזרחי</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">1 נ"ז למשך 36 חודשים</div>
+        </div>
+        <div id="toggle-sherut" class="toggle" onclick="toggleSherut()" style="flex-shrink:0"></div>
       </div>
 
       <div id="creditInfo" class="info-chip">✨ 2.25 נקודות = חיסכון של ₪529/חודש</div>
@@ -2208,6 +2217,8 @@ const state = {
   dayTimes: {},
   dayAbsence: {}, // key: "YYYY-M", value: { day: 'sick'|'unpaid'|'short' }
   residentCredit: true,
+  soldierCredit: false,
+  sherutCredit: false,
   sickPolicy: 'legal', // 'legal' | 'day1'
   mealType: 'tickets', // 'tickets' | 'cibus' | 'tenbis' | 'other'
   mealDailyValue: 0,
@@ -2295,6 +2306,8 @@ function saveAll() {
     dayAbsence: state.dayAbsence,
     sickPolicy: state.sickPolicy,
     residentCredit: state.residentCredit,
+    soldierCredit: state.soldierCredit,
+    sherutCredit: state.sherutCredit,
     mealType: state.mealType,
     mealDailyValue: state.mealDailyValue,
     mealMonthlyMax: state.mealMonthlyMax,
@@ -2345,8 +2358,16 @@ function loadAll() {
     if (data.sickPolicy) { state.sickPolicy = data.sickPolicy; setSickPolicy(data.sickPolicy, true); }
     if (data.residentCredit !== undefined) {
       state.residentCredit = data.residentCredit;
-      const el = document.getElementById('toggle-resident');
-      if (el) el.classList.toggle('on', state.residentCredit !== false);
+    }
+    if (data.soldierCredit) {
+      state.soldierCredit = true;
+      const el = document.getElementById('toggle-soldier');
+      if (el) el.classList.add('on');
+    }
+    if (data.sherutCredit) {
+      state.sherutCredit = true;
+      const el = document.getElementById('toggle-sherut');
+      if (el) el.classList.add('on');
     }
     // Meal benefit settings
     if (data.mealType) state.mealType = data.mealType;
@@ -2478,12 +2499,19 @@ function setupGenderChange() {
 
 function updateCreditPoints() {
   const gender = document.getElementById('gender').value;
-  // בסיס: גבר 2.25, אישה 2.75
+  // לפי רשות המסים 2026:
+  // תושב/ת ישראל: 2.25 נ"ז (סעיף 34) — כלול בבסיס
+  // אישה: +0.5 נ"ז (סעיף 36א)
+  // סה"כ בסיס: גבר 2.25, אישה 2.75
   let base = gender === 'female' ? 2.75 : 2.25;
 
-  // נקודת תושב ישראל: 2.25 נ"ז (סעיף 34 לפקודה)
-  const residentOn = state.residentCredit !== false;
-  const residentPts = residentOn ? 2.25 : 0;
+  // חייל משוחרר: 2 נ"ז למשך 36 חודשים מיום השחרור (סעיף 39א)
+  const soldierOn = state.soldierCredit === true;
+  const soldierPts = soldierOn ? 2 : 0;
+
+  // שירות לאומי/אזרחי: 1 נ"ז למשך 36 חודשים (סעיף 39א1)
+  const sherutOn = state.sherutCredit === true;
+  const sherutPts = sherutOn ? 1 : 0;
 
   // Sum child credit points by age
   const selects = document.querySelectorAll('.child-age-select');
@@ -2495,7 +2523,7 @@ function updateCreditPoints() {
     breakdownLines.push(`ילד ${i+1} (${getAgeLabel(sel.value)}): ${pts} נ"ז`);
   });
 
-  const cp = Math.round((base + residentPts + childTotal) * 100) / 100;
+  const cp = Math.round((base + soldierPts + sherutPts + childTotal) * 100) / 100;
   document.getElementById('creditPoints').value = cp;
   const saving = Math.round(cp * 242);
   document.getElementById('creditInfo').innerHTML = `✨ ${cp} נקודות = חיסכון של ₪${saving.toLocaleString()}/חודש`;
@@ -2504,17 +2532,41 @@ function updateCreditPoints() {
   const bd = document.getElementById('childrenPointsBreakdown');
   if (bd) {
     let bdLines = [];
-    bdLines.push(`בסיס (${gender === 'female' ? 'אישה' : 'גבר'}): ${base} נ"ז`);
-    bdLines.push(`תושב ישראל: ${residentPts} נ"ז`);
+    bdLines.push(`תושב/ת (${gender === 'female' ? 'אישה' : 'גבר'}): ${base} נ"ז`);
+    if (soldierOn) bdLines.push(`חייל/ת משוחרר/ת: ${soldierPts} נ"ז`);
+    if (sherutOn) bdLines.push(`שירות לאומי/אזרחי: ${sherutPts} נ"ז`);
     bdLines.push(...breakdownLines);
     bd.innerHTML = `<strong style="color:var(--text2)">פירוט:</strong><br>` + bdLines.join('<br>') + `<br><strong style="color:var(--accent)">סה"כ: ${cp} נקודות זיכוי</strong>`;
     bd.style.display = 'block';
   }
 }
 
+function toggleSoldier() {
+  state.soldierCredit = !state.soldierCredit;
+  document.getElementById('toggle-soldier').classList.toggle('on', state.soldierCredit);
+  // Can't have both soldier and sherut
+  if (state.soldierCredit && state.sherutCredit) {
+    state.sherutCredit = false;
+    document.getElementById('toggle-sherut').classList.remove('on');
+  }
+  updateCreditPoints();
+  saveAll();
+}
+
+function toggleSherut() {
+  state.sherutCredit = !state.sherutCredit;
+  document.getElementById('toggle-sherut').classList.toggle('on', state.sherutCredit);
+  // Can't have both
+  if (state.sherutCredit && state.soldierCredit) {
+    state.soldierCredit = false;
+    document.getElementById('toggle-soldier').classList.remove('on');
+  }
+  updateCreditPoints();
+  saveAll();
+}
+
 function toggleResident() {
-  state.residentCredit = state.residentCredit === false ? true : false;
-  document.getElementById('toggle-resident').classList.toggle('on', state.residentCredit !== false);
+  // kept for backward compat but no longer used in UI
   updateCreditPoints();
   saveAll();
 }
