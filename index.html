@@ -2180,7 +2180,7 @@
 <script>
 // Lazy-load heavy libraries only when needed
 const CDN_LIBS = {
-  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  exceljs: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
   chart: 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
   jspdf: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 };
@@ -3590,32 +3590,81 @@ function updateExportPreview() {
 }
 
 
-// ============ EXCEL EXPORT — Styled Professional ============
+// ============ EXCEL EXPORT — ExcelJS Styled ============
 async function exportExcel() {
   try {
-    if (typeof XLSX === 'undefined') {
+    if (typeof ExcelJS === 'undefined') {
       showToast('📦 טוען ספריית Excel...');
-      await loadLib('xlsx');
+      await loadLib('exceljs');
+      await new Promise(r => setTimeout(r, 200));
     }
   } catch(e) { showToast('⚠️ לא ניתן לטעון. בדוק חיבור אינטרנט.'); return; }
-  if (typeof XLSX === 'undefined') { showToast('⚠️ שגיאה בטעינת XLSX'); return; }
+  if (typeof ExcelJS === 'undefined') { showToast('⚠️ שגיאה בטעינה'); return; }
 
   try {
   const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const allDayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   const r = state.result;
-  const wb = XLSX.utils.book_new();
   const fm = n => Math.round(n);
   const fH = h => { const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return `${hh}:${String(mm).padStart(2,'0')}`; };
 
-  // ---- Sheet 1: Hours Detail ----
-  const allKeys = Object.keys(state.monthHours).sort();
-  const hoursRows = [];
-  hoursRows.push(['דוח שעות עבודה מפורט','','','','','','','','']);
-  hoursRows.push([`חודש: ${months[calMonth]} ${calYear}`,'',`הופק: ${new Date().toLocaleDateString('he-IL')}`,'','שכר בסיס:',r?'₪'+fm(r.base).toLocaleString():'','','','']);
-  hoursRows.push(['','','','','','','','','']);
-  hoursRows.push(['תאריך','יום','כניסה','יציאה','שעות','רגילות','125%','150%','סטטוס']);
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Salary Calculator v2.0';
+  wb.created = new Date();
 
+  // Colors
+  const BLUE = '4F8EF7';
+  const DARK_BLUE = '1E3A6E';
+  const GREEN = '22D17A';
+  const RED = 'EF4444';
+  const ORANGE = 'F97316';
+  const LIGHT_BLUE = 'EEF2FF';
+  const LIGHT_GREEN = 'ECFDF5';
+  const LIGHT_RED = 'FEF2F2';
+  const LIGHT_GRAY = 'F8FAFC';
+  const BORDER_COLOR = 'D0D5DD';
+  const WHITE = 'FFFFFF';
+
+  const thinBorder = { style: 'thin', color: { argb: BORDER_COLOR } };
+  const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+  // ======== Sheet 1: Hours ========
+  const ws1 = wb.addWorksheet('שעות עבודה', { views: [{ rightToLeft: true }] });
+  ws1.columns = [
+    { width: 14 }, { width: 9 }, { width: 11 }, { width: 11 }, { width: 11 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 12 }
+  ];
+
+  // Title row
+  ws1.mergeCells('A1:I1');
+  const titleCell = ws1.getCell('A1');
+  titleCell.value = 'דוח שעות עבודה מפורט';
+  titleCell.font = { bold: true, size: 16, color: { argb: WHITE } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws1.getRow(1).height = 32;
+
+  // Info row
+  ws1.mergeCells('A2:C2');
+  ws1.getCell('A2').value = `חודש: ${months[calMonth]} ${calYear}`;
+  ws1.getCell('A2').font = { bold: true, size: 11, color: { argb: DARK_BLUE } };
+  ws1.mergeCells('D2:F2');
+  ws1.getCell('D2').value = `הופק: ${new Date().toLocaleDateString('he-IL')}`;
+  ws1.mergeCells('G2:I2');
+  ws1.getCell('G2').value = r ? `שכר בסיס: ₪${fm(r.base).toLocaleString()}` : '';
+  ws1.getCell('G2').font = { bold: true, color: { argb: GREEN } };
+  ws1.getRow(2).height = 22;
+
+  // Column headers
+  const headerRow = ws1.addRow(['תאריך','יום','כניסה','יציאה','שעות','רגילות','125%','150%','סטטוס']);
+  headerRow.eachCell(cell => {
+    cell.font = { bold: true, size: 11, color: { argb: WHITE } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK_BLUE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = allBorders;
+  });
+  headerRow.height = 24;
+
+  const allKeys = Object.keys(state.monthHours).sort();
   allKeys.forEach(key => {
     const [yr, mo] = key.split('-').map(Number);
     const hoursMap = state.monthHours[key] || {};
@@ -3623,9 +3672,19 @@ async function exportExcel() {
     const absMap = state.dayAbsence[key] || {};
     const firstDay = new Date(yr, mo, 1).getDay();
     const daysInMonth = new Date(yr, mo + 1, 0).getDate();
-    hoursRows.push(['','','','','','','','','']);
-    hoursRows.push([`── ${months[mo]} ${yr} ──`,'','','','','','','','']);
-    let mReg=0, mOt125=0, mOt150=0, mTotal=0, mDays=0;
+
+    // Month separator
+    ws1.addRow([]);
+    const monthRow = ws1.addRow([`${months[mo]} ${yr}`]);
+    ws1.mergeCells(`A${monthRow.number}:I${monthRow.number}`);
+    monthRow.getCell(1).font = { bold: true, size: 12, color: { argb: BLUE } };
+    monthRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } };
+    monthRow.getCell(1).alignment = { horizontal: 'center' };
+    monthRow.height = 22;
+
+    let mReg=0,mOt125=0,mOt150=0,mTotal=0,mDays=0;
+    let rowAlt = false;
+
     for (let d = 1; d <= daysInMonth; d++) {
       const dow = (firstDay + d - 1) % 7;
       if (dow === 6) continue;
@@ -3634,102 +3693,201 @@ async function exportExcel() {
       const times = timesMap[d] || {};
       const absType = absMap[d] || '';
       let reg=0,ot125=0,ot150=0,status='';
-      if (absType==='sick') status='מחלה';
-      else if (absType==='unpaid') status='חל"ת';
-      else if (absType==='vacation') status='חופש';
+
+      if (absType==='sick') status='🤒 מחלה';
+      else if (absType==='unpaid') status='🏖️ חל"ת';
+      else if (absType==='vacation') status='🌴 חופש';
       else if (h>0) {
-        if (isFri){ot125=Math.min(h,2);ot150=Math.max(0,h-2);status='שישי';}
-        else{reg=Math.min(h,9);const ot=Math.max(0,h-9);ot125=Math.min(ot,2);ot150=Math.max(0,ot-2);status=h>=9?'יום מלא':'חוסר';}
-        mReg+=reg;mOt125+=ot125;mOt150+=ot150;mTotal+=h;mDays++;
+        if (isFri) { ot125=Math.min(h,2); ot150=Math.max(0,h-2); status='שישי'; }
+        else { reg=Math.min(h,9); const ot=Math.max(0,h-9); ot125=Math.min(ot,2); ot150=Math.max(0,ot-2); status=h>=9?'✅ יום מלא':'⚠️ חוסר'; }
+        mReg+=reg; mOt125+=ot125; mOt150+=ot150; mTotal+=h; mDays++;
       } else continue;
-      if (h>0||absType) {
-        hoursRows.push([`${String(d).padStart(2,'0')}/${String(mo+1).padStart(2,'0')}/${yr}`,allDayNames[dow],times.entry||'—',times.exit||'—',h>0?fH(h):'—',reg>0?fH(reg):'',ot125>0?fH(ot125):'',ot150>0?fH(ot150):'',status]);
+
+      if (h > 0 || absType) {
+        const dateStr = `${String(d).padStart(2,'0')}/${String(mo+1).padStart(2,'0')}/${yr}`;
+        const dataRow = ws1.addRow([dateStr, allDayNames[dow], times.entry||'—', times.exit||'—',
+          h>0?fH(h):'—', reg>0?fH(reg):'', ot125>0?fH(ot125):'', ot150>0?fH(ot150):'', status]);
+
+        // Alternate row color
+        const bgColor = absType==='sick' ? LIGHT_RED : absType==='vacation' ? LIGHT_GREEN : (rowAlt ? LIGHT_GRAY : WHITE);
+        dataRow.eachCell(cell => {
+          cell.border = allBorders;
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
+          cell.font = { size: 10 };
+        });
+        // Color status cell
+        const statusCell = dataRow.getCell(9);
+        if (status.includes('חוסר')) statusCell.font = { color: { argb: RED }, bold: true, size: 10 };
+        else if (status.includes('מלא')) statusCell.font = { color: { argb: GREEN }, bold: true, size: 10 };
+        else if (status.includes('מחלה')) statusCell.font = { color: { argb: RED }, bold: true, size: 10 };
+        else if (status.includes('חופש')) statusCell.font = { color: { argb: GREEN }, bold: true, size: 10 };
+
+        // Color overtime columns
+        if (ot125>0) dataRow.getCell(7).font = { color: { argb: ORANGE }, bold: true, size: 10 };
+        if (ot150>0) dataRow.getCell(8).font = { color: { argb: RED }, bold: true, size: 10 };
+
+        rowAlt = !rowAlt;
       }
     }
-    hoursRows.push(['','','','','','','','','']);
-    hoursRows.push([`סיכום ${months[mo]}`,`${mDays} ימים`,'','',fH(mTotal),fH(mReg),fH(mOt125),fH(mOt150),'']);
-  });
-  const ws1 = XLSX.utils.aoa_to_sheet(hoursRows);
-  ws1['!cols']=[{wch:13},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10},{wch:8},{wch:8},{wch:10}];
-  ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:8}}];
-  XLSX.utils.book_append_sheet(wb, ws1, 'שעות עבודה');
 
-  // ---- Sheet 2: Payslip ----
+    // Summary row
+    const sumRow = ws1.addRow([`סיכום ${months[mo]}`, `${mDays} ימים`, '', '', fH(mTotal), fH(mReg), fH(mOt125), fH(mOt150), '']);
+    sumRow.eachCell(cell => {
+      cell.font = { bold: true, size: 11, color: { argb: DARK_BLUE } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } };
+      cell.border = allBorders;
+      cell.alignment = { horizontal: 'center' };
+    });
+    sumRow.height = 22;
+  });
+
+  // ======== Sheet 2: Payslip ========
   if (r) {
-    const key0=`${calYear}-${calMonth}`;
-    const workDays=Object.keys(state.monthHours[key0]||{}).filter(d=>(state.monthHours[key0][d]||0)>0).length;
-    const totalHrs=Object.values(state.monthHours[key0]||{}).reduce((s,h)=>s+(h>0?h:0),0);
-    const s=[];
-    s.push(['תלוש שכר — '+months[calMonth]+' '+calYear,'','']);
-    s.push(['','','']);
-    s.push(['פרט','סכום (₪)','הערות']);
-    s.push(['','','']);
-    s.push(['── הכנסות ──','','']);
-    s.push(['שכר בסיס',fm(r.base),'ברוטו חודשי']);
-    if(r.travel>0)s.push(['דמי נסיעה',fm(r.travel),workDays+' ימים × ₪'+fm(r.travel/Math.max(workDays,1))]);
-    if(r.overtime>0)s.push(['שעות נוספות',fm(r.overtime),'גלובלי']);
-    if(r.bonus>0)s.push(['בונוס',fm(r.bonus),'']);
-    if(r.other>0)s.push(['תוספות אחרות',fm(r.other),'']);
-    if((r.sickNetDeduction||0)+(r.unpaidDeduction||0)+(r.shortHoursDeduction||0)>0){
-      s.push(['','','']);
-      s.push(['── ניכויי היעדרות ──','','']);
-      if(r.sickNetDeduction>0)s.push(['ניכוי מחלה',-fm(r.sickNetDeduction),state.sickPolicy==='day1'?'מהיום הראשון':'לפי חוק']);
-      if(r.unpaidDeduction>0)s.push(['ניכוי חל"ת',-fm(r.unpaidDeduction),'']);
-      if(r.shortHoursDeduction>0)s.push(['חוסר שעות',-fm(r.shortHoursDeduction),'']);
+    const ws2 = wb.addWorksheet('תלוש שכר', { views: [{ rightToLeft: true }] });
+    ws2.columns = [{ width: 26 }, { width: 18 }, { width: 32 }];
+
+    // Title
+    ws2.mergeCells('A1:C1');
+    const t2 = ws2.getCell('A1');
+    t2.value = `תלוש שכר — ${months[calMonth]} ${calYear}`;
+    t2.font = { bold: true, size: 16, color: { argb: WHITE } };
+    t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE } };
+    t2.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws2.getRow(1).height = 32;
+
+    ws2.addRow([]);
+
+    // Header row
+    const hdr2 = ws2.addRow(['פרט', 'סכום (₪)', 'הערות']);
+    hdr2.eachCell(c => {
+      c.font = { bold: true, size: 11, color: { argb: WHITE } };
+      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: DARK_BLUE } };
+      c.alignment = { horizontal: 'center' };
+      c.border = allBorders;
+    });
+
+    function addSection(ws, title) {
+      const r = ws.addRow([]);
+      const sr = ws.addRow([title, '', '']);
+      sr.eachCell(c => {
+        c.font = { bold: true, size: 11, color: { argb: BLUE } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } };
+        c.border = allBorders;
+      });
+      sr.height = 22;
     }
-    s.push(['','','']);
-    s.push(['סה"כ ברוטו',fm(r.grossTotal),'']);
-    s.push(['','','']);
-    s.push(['── ניכויי חובה ──','','']);
-    s.push(['מס הכנסה',-fm(r.incomeTax),'מס אפקטיבי: '+r.effectiveRate.toFixed(1)+'%']);
-    s.push(['ביטוח לאומי',-fm(r.bituach),'חלק עובד']);
-    s.push(['מס בריאות',-fm(r.healthTax),'']);
-    if(r.pensionEmployee>0)s.push(['פנסיה עובד',-fm(r.pensionEmployee),(document.getElementById('pensionEmployee')?.value||6)+'%']);
-    if(r.trainingEmployee>0)s.push(['קרן השתלמות',-fm(r.trainingEmployee),(document.getElementById('trainingFund')?.value||2.5)+'%']);
-    if(r.extraDeduction>0)s.push(['ניכוי נוסף',-fm(r.extraDeduction),'']);
-    s.push(['','','']);
-    s.push(['סה"כ ניכויים',-fm(r.totalDeductions),'']);
-    s.push(['','','']);
-    s.push(['══ שכר נטו לתשלום ══',fm(r.netSalary),'']);
-    s.push(['','','']);
-    s.push(['── נתונים נוספים ──','','']);
-    s.push(['שכר שעתי (נטו)','₪'+fm(r.hourlyNet),'']);
-    s.push(['שכר יומי (נטו)','₪'+fm(r.dailyNet),'']);
-    s.push(['ימי עבודה',workDays,'']);
-    s.push(['שעות עבודה',fH(totalHrs),'']);
-    s.push(['נקודות זיכוי',r.creditPoints,'חיסכון: ₪'+fm(r.creditDeduction)]);
-    s.push(['','','']);
-    s.push(['── הפרשות מעסיק ──','','']);
-    s.push(['פנסיה מעסיק',fm(r.empPension),'']);
-    s.push(['קרן השתלמות מעסיק',fm(r.empTraining),'']);
-    s.push(['פיצויים (8.33%)',fm(r.empSeverance),'']);
-    s.push(['ביטוח לאומי מעסיק',fm(r.empBituach),'']);
-    s.push(['סה"כ עלות מעסיק',fm(r.totalEmployerCost),'']);
-    const ws2=XLSX.utils.aoa_to_sheet(s);
-    ws2['!cols']=[{wch:24},{wch:16},{wch:30}];
-    ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];
-    XLSX.utils.book_append_sheet(wb,ws2,'תלוש שכר');
+    function addDataRow(ws, label, value, note, isNeg) {
+      const dr = ws.addRow([label, value, note || '']);
+      dr.eachCell(c => { c.border = allBorders; c.font = { size: 10 }; c.alignment = { vertical: 'middle' }; });
+      dr.getCell(1).font = { size: 10, color: { argb: '374151' } };
+      if (isNeg) dr.getCell(2).font = { size: 10, color: { argb: RED }, bold: true };
+      else dr.getCell(2).font = { size: 10, bold: true };
+    }
+    function addTotalRow(ws, label, value, color) {
+      const tr = ws.addRow([label, value, '']);
+      tr.eachCell(c => {
+        c.font = { bold: true, size: 13, color: { argb: color || DARK_BLUE } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color===GREEN ? LIGHT_GREEN : LIGHT_BLUE } };
+        c.border = allBorders;
+        c.alignment = { vertical: 'middle' };
+      });
+      tr.height = 26;
+    }
+
+    const key0 = `${calYear}-${calMonth}`;
+    const workDays = Object.keys(state.monthHours[key0]||{}).filter(d=>(state.monthHours[key0][d]||0)>0).length;
+    const totalHrs = Object.values(state.monthHours[key0]||{}).reduce((s,h)=>s+(h>0?h:0),0);
+
+    addSection(ws2, 'הכנסות');
+    addDataRow(ws2, 'שכר בסיס', fm(r.base), 'ברוטו חודשי');
+    if (r.travel>0) addDataRow(ws2, 'דמי נסיעה', fm(r.travel), workDays+' ימים × ₪'+fm(r.travel/Math.max(workDays,1)));
+    if (r.overtime>0) addDataRow(ws2, 'שעות נוספות', fm(r.overtime), 'גלובלי');
+    if (r.bonus>0) addDataRow(ws2, 'בונוס', fm(r.bonus));
+    if (r.other>0) addDataRow(ws2, 'תוספות אחרות', fm(r.other));
+
+    if ((r.sickNetDeduction||0)+(r.unpaidDeduction||0)+(r.shortHoursDeduction||0)>0) {
+      addSection(ws2, 'ניכויי היעדרות');
+      if (r.sickNetDeduction>0) addDataRow(ws2, 'ניכוי מחלה', -fm(r.sickNetDeduction), state.sickPolicy==='day1'?'מהיום הראשון':'לפי חוק', true);
+      if (r.unpaidDeduction>0) addDataRow(ws2, 'ניכוי חל"ת', -fm(r.unpaidDeduction), '', true);
+      if (r.shortHoursDeduction>0) addDataRow(ws2, 'חוסר שעות', -fm(r.shortHoursDeduction), '', true);
+    }
+
+    addTotalRow(ws2, 'סה"כ ברוטו', fm(r.grossTotal));
+
+    addSection(ws2, 'ניכויי חובה');
+    addDataRow(ws2, 'מס הכנסה', -fm(r.incomeTax), 'מס אפקטיבי: '+r.effectiveRate.toFixed(1)+'%', true);
+    addDataRow(ws2, 'ביטוח לאומי', -fm(r.bituach), 'חלק עובד', true);
+    addDataRow(ws2, 'מס בריאות', -fm(r.healthTax), '', true);
+    if (r.pensionEmployee>0) addDataRow(ws2, 'פנסיה עובד', -fm(r.pensionEmployee), (document.getElementById('pensionEmployee')?.value||6)+'%', true);
+    if (r.trainingEmployee>0) addDataRow(ws2, 'קרן השתלמות', -fm(r.trainingEmployee), (document.getElementById('trainingFund')?.value||2.5)+'%', true);
+    if (r.extraDeduction>0) addDataRow(ws2, 'ניכוי נוסף', -fm(r.extraDeduction), '', true);
+
+    addTotalRow(ws2, 'סה"כ ניכויים', -fm(r.totalDeductions), RED);
+
+    // NET SALARY — big green row
+    const netRow = ws2.addRow(['']);
+    addTotalRow(ws2, '💰 שכר נטו לתשלום', '₪'+fm(r.netSalary).toLocaleString(), GREEN);
+
+    addSection(ws2, 'נתונים נוספים');
+    addDataRow(ws2, 'שכר שעתי (נטו)', '₪'+fm(r.hourlyNet));
+    addDataRow(ws2, 'שכר יומי (נטו)', '₪'+fm(r.dailyNet));
+    addDataRow(ws2, 'ימי עבודה', workDays);
+    addDataRow(ws2, 'שעות עבודה', fH(totalHrs));
+    addDataRow(ws2, 'נקודות זיכוי', r.creditPoints, 'חיסכון: ₪'+fm(r.creditDeduction));
+
+    addSection(ws2, 'הפרשות מעסיק');
+    addDataRow(ws2, 'פנסיה מעסיק', fm(r.empPension));
+    addDataRow(ws2, 'קרן השתלמות מעסיק', fm(r.empTraining));
+    addDataRow(ws2, 'פיצויים (8.33%)', fm(r.empSeverance));
+    addDataRow(ws2, 'ביטוח לאומי מעסיק', fm(r.empBituach));
+    addTotalRow(ws2, 'סה"כ עלות מעסיק', '₪'+fm(r.totalEmployerCost).toLocaleString());
   }
 
-  // ---- Sheet 3: Meals ----
-  const hist=loadTicketsHistory();
-  const mr=[['מעקב הטבת ארוחות','','',''],['סוג:',getMealTypeName(),'',''],['','','',''],['תאריך','סוג','סכום','חודש']];
-  if(hist.length>0){hist.forEach(h=>{mr.push([h.date,h.typeName||h.type,h.type==='ticket'?h.amount+' פתקים':'₪'+Math.round(h.amount),h.month||'']);});}
-  else mr.push(['אין נתונים','','','']);
-  const ws3=XLSX.utils.aoa_to_sheet(mr);
-  ws3['!cols']=[{wch:14},{wch:12},{wch:14},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,ws3,'ארוחות');
+  // ======== Sheet 3: Meals ========
+  const ws3 = wb.addWorksheet('ארוחות', { views: [{ rightToLeft: true }] });
+  ws3.columns = [{ width: 14 },{ width: 12 },{ width: 14 },{ width: 12 }];
+  ws3.mergeCells('A1:D1');
+  ws3.getCell('A1').value = 'מעקב הטבת ארוחות';
+  ws3.getCell('A1').font = { bold: true, size: 14, color: { argb: WHITE } };
+  ws3.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ORANGE } };
+  ws3.getCell('A1').alignment = { horizontal: 'center' };
+  ws3.getRow(1).height = 28;
+  ws3.addRow(['סוג:', getMealTypeName()]);
+  ws3.addRow([]);
+  const mHdr = ws3.addRow(['תאריך','סוג','סכום','חודש']);
+  mHdr.eachCell(c => { c.font={bold:true,size:10,color:{argb:WHITE}}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:DARK_BLUE}}; c.border=allBorders; c.alignment={horizontal:'center'}; });
+  const hist = loadTicketsHistory();
+  if (hist.length>0) { hist.forEach(h => { const dr=ws3.addRow([h.date,h.typeName||h.type,h.type==='ticket'?h.amount+' פתקים':'₪'+Math.round(h.amount),h.month||'']); dr.eachCell(c=>{c.border=allBorders;c.alignment={horizontal:'center'};}); }); }
 
-  // ---- Sheet 4: Annual ----
+  // ======== Sheet 4: Annual ========
+  const ws4 = wb.addWorksheet('סיכום שנתי', { views: [{ rightToLeft: true }] });
+  ws4.columns = [{ width: 20 },{ width: 12 }];
+  ws4.mergeCells('A1:B1');
+  ws4.getCell('A1').value = 'סיכום שנתי '+new Date().getFullYear();
+  ws4.getCell('A1').font = { bold:true,size:14,color:{argb:WHITE} };
+  ws4.getCell('A1').fill = { type:'pattern',pattern:'solid',fgColor:{argb:BLUE} };
+  ws4.getCell('A1').alignment = { horizontal:'center' };
+  ws4.getRow(1).height = 28;
+  ws4.addRow([]);
+  const aHdr=ws4.addRow(['מדד','ערך']);
+  aHdr.eachCell(c=>{c.font={bold:true,color:{argb:WHITE}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:DARK_BLUE}};c.border=allBorders;c.alignment={horizontal:'center'};});
   const annual=getAnnualAbsence();
-  const a=[['סיכום שנתי '+new Date().getFullYear(),'',''],['','',''],['מדד','ערך',''],['ימי עבודה',annual.totalWorkDays,''],['ימי חופשה',annual.vacation,''],['ימי מחלה',annual.sick,''],['חל"ת',annual.unpaid,'']];
-  const ws4=XLSX.utils.aoa_to_sheet(a);
-  ws4['!cols']=[{wch:18},{wch:10},{wch:18}];
-  XLSX.utils.book_append_sheet(wb,ws4,'שנתי');
+  [['ימי עבודה',annual.totalWorkDays],['ימי חופשה',annual.vacation],['ימי מחלה',annual.sick],['חל"ת',annual.unpaid]].forEach(([l,v])=>{
+    const dr=ws4.addRow([l,v]);dr.eachCell(c=>{c.border=allBorders;c.alignment={horizontal:'center'};});
+  });
 
-  XLSX.writeFile(wb,`דוח_שכר_${months[calMonth]}_${calYear}.xlsx`);
-  showToast('📗 דוח אקסל מפורט הורד!');
-  }catch(err){console.error('Excel error:',err);showToast('⚠️ שגיאה בייצוא Excel');}
+  // ======== Download ========
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `דוח_שכר_${months[calMonth]}_${calYear}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📗 דוח אקסל מעוצב הורד!');
+  } catch(err) { console.error('Excel error:', err); showToast('⚠️ שגיאה בייצוא: '+(err.message||'')); }
 }
 
 // ============ PDF PAYSLIP ============
