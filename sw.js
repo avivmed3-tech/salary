@@ -6,17 +6,54 @@ const CDN_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
-self.addEventListener('message', e => { if (e.data?.type === 'SKIP_WAITING') self.skipWaiting(); });
+
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data?.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = e.data;
+    self.registration.showNotification(title, {
+      body,
+      icon: './icon192.png',
+      badge: './icon192.png',
+      tag: tag || 'salary-reminder',
+      dir: 'rtl',
+      lang: 'he',
+      vibrate: [200, 100, 200],
+      actions: [
+        { action: 'open', title: 'פתח אפליקציה' },
+        { action: 'dismiss', title: 'סגור' }
+      ]
+    });
+  }
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  if (e.action === 'dismiss') return;
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow('./');
+    })
+  );
+});
+
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(async cache => {
     await cache.addAll(STATIC_ASSETS);
     for (const url of CDN_ASSETS) { try { await cache.add(url); } catch(err) {} }
   }));
 });
+
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
   self.clients.claim();
 });
+
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'cdnjs.cloudflare.com' || url.hostname === 'cdn.jsdelivr.net') {

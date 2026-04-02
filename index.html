@@ -1015,6 +1015,171 @@
   }
   .ob-skip:hover { color: var(--text2); }
 
+  /* ===== PRODUCT TOUR ===== */
+  .tour-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 19000;
+    pointer-events: none;
+  }
+  .tour-spotlight {
+    position: absolute;
+    border-radius: 14px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.78);
+    transition: all 0.38s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+  }
+  .tour-tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 18px;
+    padding: 18px 20px 14px;
+    max-width: 320px;
+    width: calc(100vw - 32px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(79,142,247,0.2);
+    z-index: 19001;
+    pointer-events: all;
+    transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+    font-family: 'Heebo', sans-serif;
+  }
+  .tour-tooltip-arrow {
+    position: absolute;
+    width: 14px; height: 14px;
+    background: var(--surface);
+    border-top: 1.5px solid var(--accent);
+    border-right: 1.5px solid var(--accent);
+    transform: rotate(-45deg);
+  }
+  .tour-step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(79,142,247,0.15);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .tour-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .tour-body {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .tour-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .tour-btn-next {
+    flex: 1;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .tour-btn-next:active { transform: scale(0.96); }
+  .tour-btn-skip {
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text3);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+  }
+  .tour-progress {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .tour-pip {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--surface3);
+    transition: all 0.3s;
+  }
+  .tour-pip.active {
+    background: var(--accent);
+    width: 18px;
+    border-radius: 3px;
+  }
+  .tour-pip.done { background: var(--green); }
+
+  /* ===== PUSH NOTIFICATION SETTINGS ===== */
+  .notif-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-toggle-row:last-child { border-bottom: none; }
+  .notif-toggle-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .notif-toggle-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--surface3);
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border: 1.5px solid var(--border);
+  }
+  .toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  input:checked + .toggle-track {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  input:checked + .toggle-track::before {
+    transform: translateY(-50%) translateX(22px);
+  }
+
   /* Quick salary summary card on hours tab */
   .salary-quick-card {
     background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(124,92,252,0.08));
@@ -1276,8 +1441,10 @@
       <h1>מחשבון שכר</h1>
       <span style="font-size:10px;color:var(--text3);background:var(--surface3);border-radius:10px;padding:2px 8px;font-weight:600;margin-right:4px">v2.0</span>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
+    <div style="display:flex;align-items:center;gap:8px">
       <div class="header-sub">חישוב שכר מקצועי · ישראל 2026</div>
+      <button onclick="startProductTour()" id="guideFab" title="מדריך שימוש"
+        style="background:linear-gradient(135deg,rgba(124,92,252,0.7),rgba(79,142,247,0.7));border:1px solid rgba(124,92,252,0.5);border-radius:20px;padding:5px 11px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;font-family:'Heebo',sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:4px;white-space:nowrap;letter-spacing:0.1px">🎓 מדריך</button>
       <button onclick="toggleTheme()" id="themeBtn" title="מצב יום/לילה"
         style="background:rgba(255,255,255,0.15);border:none;border-radius:20px;padding:5px 10px;color:#fff;font-size:16px;cursor:pointer;font-family:'Heebo',sans-serif;transition:all 0.2s">🌙</button>
     </div>
@@ -2105,17 +2272,6 @@
   <div id="tab-export" class="page">
     <div class="section">
       <div class="section-header">
-        <div class="section-icon" style="background:rgba(79,142,247,0.15)">📅</div>
-        <div>
-          <div class="section-title">בחר חודש לייצוא</div>
-          <div class="section-sub">נקודה ירוקה = יש נתוני שעות</div>
-        </div>
-      </div>
-      <div id="exportMonthChips"></div>
-    </div>
-
-    <div class="section">
-      <div class="section-header">
         <div class="section-icon" style="background:rgba(79,142,247,0.15)">📤</div>
         <div>
           <div class="section-title">ייצוא נתונים</div>
@@ -2154,6 +2310,67 @@
       <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(this)">
       <div style="height:1px;background:var(--border);margin:8px 0"></div>
       <button class="export-btn" onclick="confirmResetAll()" style="border-color:rgba(239,68,68,0.3);color:var(--red)">🗑️ איפוס כל הנתונים</button>
+    </div>
+
+    <!-- Push Notification Settings -->
+    <div class="section" id="notifSettingsSection">
+      <div class="section-header">
+        <div class="section-icon" style="background:rgba(124,92,252,0.15)">🔔</div>
+        <div>
+          <div class="section-title">התראות Push</div>
+          <div class="section-sub">קבל תזכורות גם כשהאפליקציה סגורה</div>
+        </div>
+      </div>
+      <div id="notifPermissionBanner" style="display:none;background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(79,142,247,0.08));border:1.5px solid rgba(124,92,252,0.3);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">🔔 אפשר התראות</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">כדי לקבל תזכורות על פתקי אוכל ויתרות גם כשהאפליקציה סגורה, יש לאשר קבלת התראות.</div>
+        <button onclick="requestPushPermission()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:800;font-family:'Heebo',sans-serif;cursor:pointer">אפשר התראות 🔔</button>
+      </div>
+      <div id="notifBlockedBanner" style="display:none;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.25);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.6">
+        ⚠️ התראות חסומות בהגדרות הדפדפן. כדי לאפשר, לך להגדרות האתר בדפדפן ואפשר התראות.
+      </div>
+      <div id="notifEnabledBanner" style="display:none;background:rgba(34,209,122,0.08);border:1.5px solid rgba(34,209,122,0.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--green);font-weight:700">
+        ✅ התראות מופעלות — תקבל תזכורות גם כשהאפליקציה סגורה
+      </div>
+      <div id="notifToggles">
+        <div class="notif-toggle-row">
+          <div>
+            <div class="notif-toggle-label">תזכורת יום חמישי</div>
+            <div class="notif-toggle-sub">תזכורת שבועית על יתרת פתקים/ארוחות</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif-thursday" checked onchange="saveNotifSettings()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+        <div class="notif-toggle-row">
+          <div>
+            <div class="notif-toggle-label">יום עבודה אחרון בחודש</div>
+            <div class="notif-toggle-sub">תזכורת לפני שהיתרה מתאפסת</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif-monthend" checked onchange="saveNotifSettings()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+        <div class="notif-toggle-row">
+          <div>
+            <div class="notif-toggle-label">שעת התזכורת</div>
+            <div class="notif-toggle-sub">מתי לשלוח את ההתראה</div>
+          </div>
+          <select id="notif-hour" onchange="saveNotifSettings()" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;font-weight:700">
+            <option value="8">08:00</option>
+            <option value="9">09:00</option>
+            <option value="10" selected>10:00</option>
+            <option value="11">11:00</option>
+            <option value="12">12:00</option>
+            <option value="13">13:00</option>
+          </select>
+        </div>
+        <div style="margin-top:10px">
+          <button onclick="sendTestNotification()" style="width:100%;padding:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;font-family:'Heebo',sans-serif;cursor:pointer">📤 שלח התראת בדיקה</button>
+        </div>
+      </div>
     </div>
 
     <!-- App Info -->
@@ -2240,58 +2457,6 @@ const state = {
   result: null
 };
 
-// Export month selector — defaults to current viewed month
-let exportYear, exportMonth;
-function initExportMonth() {
-  exportYear = calYear;
-  exportMonth = calMonth;
-}
-function setExportMonth(m, y) {
-  exportMonth = m;
-  exportYear = y || calYear;
-  renderExportMonthChips();
-  // Recalculate with the selected export month's data
-  recalcForExportMonth();
-}
-function recalcForExportMonth() {
-  // Temporarily switch calMonth/calYear, calculate, then restore
-  const origMonth = calMonth, origYear = calYear;
-  calMonth = exportMonth;
-  calYear = exportYear;
-  syncAbsenceToInputs();
-  calculate();
-  calMonth = origMonth;
-  calYear = origYear;
-  syncAbsenceToInputs(); // restore current month inputs
-}
-function renderExportMonthChips() {
-  const container = document.getElementById('exportMonthChips');
-  if (!container) return;
-  const months = ['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
-  // Year selector
-  let html = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
-  html += `<button onclick="setExportYear(exportYear-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer">‹</button>`;
-  html += `<span style="font-size:14px;font-weight:700;color:var(--text);min-width:50px;text-align:center">${exportYear}</span>`;
-  html += `<button onclick="setExportYear(exportYear+1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer">›</button>`;
-  html += '</div>';
-  // Month chips
-  html += '<div class="month-tabs">';
-  months.forEach((m, i) => {
-    const isActive = i === exportMonth;
-    const hasData = state.monthHours[`${exportYear}-${i}`] && Object.keys(state.monthHours[`${exportYear}-${i}`]).some(d => state.monthHours[`${exportYear}-${i}`][d] > 0);
-    const dotStyle = hasData ? 'display:block;width:4px;height:4px;border-radius:50%;background:var(--green);margin:2px auto 0' : 'display:none';
-    html += `<button class="month-chip${i === exportMonth ? ' active' : ''}" onclick="setExportMonth(${i}, ${exportYear})" style="text-align:center;${hasData && i !== exportMonth ? 'border-color:rgba(34,209,122,0.4)' : ''}">
-      ${m}<div style="${dotStyle}"></div>
-    </button>`;
-  });
-  html += '</div>';
-  container.innerHTML = html;
-}
-function setExportYear(y) {
-  exportYear = y;
-  renderExportMonthChips();
-}
-
 // ============ GLOBAL ERROR HANDLER ============
 window.onerror = function(msg, url, line, col, err) {
   console.error('App error:', msg, url, line);
@@ -2353,7 +2518,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const STORAGE_KEY = 'salary_app_v1';
 
 function saveAll() {
-  const inputs = ['baseSalary','hourlyRate','travel','overtime','bonus','other',
+  const inputs = ['baseSalary','hourlyRate','travel','overtime','bonus','other','sickDays','unpaidDays',
     'creditPoints','gender','numChildren','pensionEmployee','pensionEmployer',
     'trainingFund','trainingFundEmployer','extraDeduction','holidayDays','vacationDays','salaryType','taxYear'];
   const formData = {};
@@ -2451,7 +2616,6 @@ function autoSave() {
 function init() {
   loadAll();
   setupMonthLabel();
-  syncAbsenceToInputs(); // sync sick/unpaid from current month calendar data
   setupTaxBrackets();
   setupGenderChange();
   onSalaryTypeChange(); // restore hourly/monthly UI
@@ -2464,7 +2628,7 @@ function init() {
     });
   });
   // Initial calculation on load (once, from saved data)
-  setTimeout(() => { calculate(); initExportMonth(); }, 200);
+  setTimeout(() => calculate(), 200);
 }
 
 // ============ CREDIT POINTS — גיל ילדים ============
@@ -2650,9 +2814,7 @@ function changeMonth(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderHoursCalendar();
-  syncAbsenceToInputs(); // sync sick/unpaid days for the new month
   updateMealDisplay();
-  calculate(); // recalculate for the new month
 }
 
 function renderHoursCalendar() {
@@ -2927,12 +3089,12 @@ function countAbsenceDays() {
 
 function syncAbsenceToInputs() {
   const { sick, unpaid } = countAbsenceDays();
+  // Add to manually entered values
   const sickEl = document.getElementById('sickDays');
   const unpaidEl = document.getElementById('unpaidDays');
-  // Always sync from calendar — these values are derived, not manually saved
-  if (sickEl) sickEl.value = sick || '';
-  if (unpaidEl) unpaidEl.value = unpaid || '';
-  updateAbsenceInfo();
+  // Only sync from calendar (don't override manual)
+  if (sickEl && !sickEl._manualEdit) sickEl.value = sick || '';
+  if (unpaidEl && !unpaidEl._manualEdit) unpaidEl.value = unpaid || '';
 }
 
 function updateAbsenceInfo() {
@@ -3167,11 +3329,7 @@ function showTab(name) {
     navItem.classList.add('active');
     navItem.setAttribute('aria-selected', 'true');
   }
-  if (name === 'export') {
-    initExportMonth();
-    renderExportMonthChips();
-    if (state.result) updateExportPreview();
-  }
+  if (name === 'export' && state.result) updateExportPreview();
   if (name === 'dashboard') { calculate(); }
   if (name === 'hours') { updateQuickSummary(); }
   // Scroll to top on tab change
@@ -3671,13 +3829,10 @@ function getExportText() {
   const r = state.result;
   const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
   const now = new Date().toLocaleDateString('he-IL');
-  const monthNames = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-  const mLabel = monthNames[exportMonth] + ' ' + exportYear;
   return `
 =============================
      תלוש שכר מקוצר
-     ${mLabel}
-     הופק: ${now}
+     ${now}
 =============================
 
 שכר ברוטו:          ${fmt(r.grossTotal)}
@@ -3711,7 +3866,6 @@ function getExportText() {
 }
 
 function updateExportPreview() {
-  recalcForExportMonth();
   document.getElementById('exportText').textContent = getExportText();
 }
 
@@ -3728,7 +3882,6 @@ async function exportExcel() {
   if (typeof ExcelJS === 'undefined') { showToast('⚠️ שגיאה בטעינה'); return; }
 
   try {
-  recalcForExportMonth(); // calculate for selected export month
   const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const allDayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   const r = state.result;
@@ -3772,7 +3925,7 @@ async function exportExcel() {
 
   // Info row
   ws1.mergeCells('A2:C2');
-  ws1.getCell('A2').value = `חודש: ${months[exportMonth]} ${exportYear}`;
+  ws1.getCell('A2').value = `חודש: ${months[calMonth]} ${calYear}`;
   ws1.getCell('A2').font = { bold: true, size: 11, color: { argb: DARK_BLUE } };
   ws1.mergeCells('D2:F2');
   ws1.getCell('D2').value = `הופק: ${new Date().toLocaleDateString('he-IL')}`;
@@ -3877,7 +4030,7 @@ async function exportExcel() {
     // Title
     ws2.mergeCells('A1:C1');
     const t2 = ws2.getCell('A1');
-    t2.value = `תלוש שכר — ${months[exportMonth]} ${exportYear}`;
+    t2.value = `תלוש שכר — ${months[calMonth]} ${calYear}`;
     t2.font = { bold: true, size: 16, color: { argb: WHITE } };
     t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE } };
     t2.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -3922,7 +4075,7 @@ async function exportExcel() {
       tr.height = 26;
     }
 
-    const key0 = `${exportYear}-${exportMonth}`;
+    const key0 = `${calYear}-${calMonth}`;
     const workDays = Object.keys(state.monthHours[key0]||{}).filter(d=>(state.monthHours[key0][d]||0)>0).length;
     const totalHrs = Object.values(state.monthHours[key0]||{}).reduce((s,h)=>s+(h>0?h:0),0);
 
@@ -4010,7 +4163,7 @@ async function exportExcel() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `דוח_שכר_${months[exportMonth]}_${exportYear}.xlsx`;
+  a.download = `דוח_שכר_${months[calMonth]}_${calYear}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('📗 דוח אקסל מעוצב הורד!');
@@ -4020,7 +4173,6 @@ async function exportExcel() {
 // ============ PDF PAYSLIP ============
 async function exportPayslipPDF() {
   if (!state.result) { showToast('⚠️ יש לחשב שכר תחילה'); return; }
-  recalcForExportMonth(); // calculate for selected export month
   try {
     if (!window.jspdf) {
       showToast('📦 טוען ספריית PDF...');
@@ -4047,7 +4199,7 @@ async function exportPayslipPDF() {
     doc.setFontSize(16);
     doc.text('Salary Payslip',rx(15),13,{align:'right'});
     doc.setFontSize(10);
-    doc.text(monthsHe[exportMonth]+' '+exportYear,rx(15),22,{align:'right'});
+    doc.text(monthsHe[calMonth]+' '+calYear,rx(15),22,{align:'right'});
     doc.setFontSize(8);
     doc.text(new Date().toLocaleDateString('he-IL'),15,13);
     doc.text('Salary Calculator v2.0',15,20);
@@ -4148,15 +4300,15 @@ async function exportPayslipPDF() {
     doc.rect(0,0,pw,20,'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(12);
-    doc.text('Hours Detail - '+monthsHe[exportMonth]+' '+exportYear,rx(15),13,{align:'right'});
+    doc.text('Hours Detail - '+monthsHe[calMonth]+' '+calYear,rx(15),13,{align:'right'});
     y=28;
 
-    const key0=`${exportYear}-${exportMonth}`;
+    const key0=`${calYear}-${calMonth}`;
     const hMap=state.monthHours[key0]||{};
     const tMap=(state.dayTimes&&state.dayTimes[key0])||{};
     const aMap=state.dayAbsence[key0]||{};
-    const fd=new Date(exportYear,exportMonth,1).getDay();
-    const dim=new Date(exportYear,exportMonth+1,0).getDate();
+    const fd=new Date(calYear,calMonth,1).getDay();
+    const dim=new Date(calYear,calMonth+1,0).getDate();
     const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     // Header row
@@ -4187,7 +4339,7 @@ async function exportPayslipPDF() {
       if(d%2===0){doc.setFillColor(248,249,252);doc.rect(15,y-3.5,pw-30,5.5,'F');}
       doc.setTextColor(ab?RED[0]:DRK[0],ab?RED[1]:DRK[1],ab?RED[2]:DRK[2]);
       doc.setFontSize(7);
-      doc.text(d+'/'+(exportMonth+1),cx[0],y,{align:'right'});
+      doc.text(d+'/'+(calMonth+1),cx[0],y,{align:'right'});
       doc.text(dn[dow],cx[1],y,{align:'right'});
       doc.text(ab||tm.entry||'',cx[2],y,{align:'right'});
       doc.text(ab?'':tm.exit||'',cx[3],y,{align:'right'});
@@ -4212,7 +4364,7 @@ async function exportPayslipPDF() {
     doc.setFontSize(6);
     doc.text('Generated by Salary Calculator v2.0 | For estimation purposes only',pw/2,ph-8,{align:'center'});
 
-    doc.save('Payslip_'+monthsEn[exportMonth]+'_'+exportYear+'.pdf');
+    doc.save('Payslip_'+monthsEn[calMonth]+'_'+calYear+'.pdf');
     showToast('📄 תלוש שכר PDF הורד!');
   } catch(err) {
     console.error('PDF error:', err);
@@ -5215,7 +5367,414 @@ function rateApp(action) {
   }
 }
 
-// ============ SAFE NUMBER FORMAT ============
+
+// ============ PUSH NOTIFICATIONS ============
+const NOTIF_SETTINGS_KEY = 'push_notif_settings_v1';
+
+function loadNotifSettings() {
+  try {
+    const raw = localStorage.getItem(NOTIF_SETTINGS_KEY);
+    return raw ? JSON.parse(raw) : { thursday: true, monthend: true, hour: 10 };
+  } catch(e) { return { thursday: true, monthend: true, hour: 10 }; }
+}
+
+function saveNotifSettings() {
+  const s = {
+    thursday: document.getElementById('notif-thursday')?.checked ?? true,
+    monthend: document.getElementById('notif-monthend')?.checked ?? true,
+    hour: parseInt(document.getElementById('notif-hour')?.value || '10')
+  };
+  localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(s));
+  // Reschedule after save
+  scheduleAllPushNotifications();
+}
+
+function initNotifSettingsUI() {
+  const s = loadNotifSettings();
+  const th = document.getElementById('notif-thursday');
+  const me = document.getElementById('notif-monthend');
+  const hr = document.getElementById('notif-hour');
+  if (th) th.checked = s.thursday;
+  if (me) me.checked = s.monthend;
+  if (hr) hr.value = s.hour;
+  updateNotifPermissionUI();
+}
+
+function updateNotifPermissionUI() {
+  const permBanner = document.getElementById('notifPermissionBanner');
+  const blockedBanner = document.getElementById('notifBlockedBanner');
+  const enabledBanner = document.getElementById('notifEnabledBanner');
+  const toggles = document.getElementById('notifToggles');
+  if (!permBanner) return;
+
+  const perm = Notification?.permission;
+  permBanner.style.display = 'none';
+  blockedBanner.style.display = 'none';
+  enabledBanner.style.display = 'none';
+
+  if (!('Notification' in window)) {
+    blockedBanner.style.display = 'block';
+    blockedBanner.textContent = '⚠️ הדפדפן שלך לא תומך בהתראות Push.';
+    return;
+  }
+  if (perm === 'denied') {
+    blockedBanner.style.display = 'block';
+  } else if (perm === 'granted') {
+    enabledBanner.style.display = 'block';
+  } else {
+    permBanner.style.display = 'block';
+  }
+  if (toggles) toggles.style.display = perm === 'denied' ? 'none' : 'block';
+}
+
+async function requestPushPermission() {
+  if (!('Notification' in window)) {
+    showToast('⚠️ הדפדפן שלך לא תומך בהתראות');
+    return;
+  }
+  const result = await Notification.requestPermission();
+  updateNotifPermissionUI();
+  if (result === 'granted') {
+    showToast('✅ התראות הופעלו!');
+    scheduleAllPushNotifications();
+    // Send welcome notification
+    setTimeout(() => {
+      sendPushNotification('🎉 התראות הופעלו!', 'תקבל/י תזכורות על פתקי אוכל ויתרות גם כשהאפליקציה סגורה.', '🔔');
+    }, 800);
+  } else if (result === 'denied') {
+    showToast('⚠️ ההתראות נחסמו. ניתן לשנות בהגדרות הדפדפן.');
+  }
+}
+
+function sendPushNotification(title, body, icon) {
+  if (Notification?.permission !== 'granted') return;
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title,
+        body,
+        icon: icon || '🔔',
+        tag: 'salary-reminder-' + Date.now()
+      });
+    } else {
+      new Notification(title, {
+        body,
+        icon: './icon192.png',
+        badge: './icon192.png',
+        tag: 'salary-reminder'
+      });
+    }
+  } catch(e) { console.log('Notification error:', e); }
+}
+
+function sendTestNotification() {
+  if (Notification?.permission !== 'granted') {
+    requestPushPermission();
+    return;
+  }
+  const remaining = getTicketsRemaining();
+  const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
+  const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+  const remStr = isCard ? fmt(remaining) : `${remaining} פתקים`;
+  sendPushNotification(
+    '🍽️ בדיקת תזכורת — מחשבון שכר',
+    remaining > 0 ? `נשארו לך ${remStr} בהטבת הארוחות. אל תשכח לנצל!` : 'כל ההטבה מומשה החודש. כל הכבוד! 🎉',
+    '🍽️'
+  );
+  showToast('📤 נשלחה התראת בדיקה!');
+}
+
+// Schedule push notifications using alarms via SW messaging
+function scheduleAllPushNotifications() {
+  if (Notification?.permission !== 'granted') return;
+  const s = loadNotifSettings();
+  // Store schedule in localStorage so SW can check on next launch
+  const schedule = { thursday: s.thursday, monthend: s.monthend, hour: s.hour };
+  localStorage.setItem('push_schedule', JSON.stringify(schedule));
+}
+
+// Called on app load — checks if we should fire a push notification now
+function checkAndFireScheduledNotifications() {
+  if (Notification?.permission !== 'granted') return;
+  const raw = localStorage.getItem('push_schedule');
+  if (!raw) return;
+  let s;
+  try { s = JSON.parse(raw); } catch(e) { return; }
+
+  const now = new Date();
+  const dow = now.getDay();
+  const hr = now.getHours();
+  const todayKey = now.toISOString().slice(0, 10);
+  const firedKey = 'push_fired_' + todayKey;
+  if (localStorage.getItem(firedKey)) return; // already fired today
+
+  const targetHour = s.hour ?? 10;
+  if (hr < targetHour) return; // not time yet
+
+  const remaining = getTicketsRemaining();
+  const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
+  const typeName = getMealTypeName();
+  const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
+
+  let fired = false;
+
+  // Thursday reminder
+  if (s.thursday && dow === 4) {
+    const remStr = isCard ? fmt(remaining) : `${remaining} פתקים`;
+    const body = remaining > 0
+      ? `נשארו לך ${remStr} ב${typeName}. סוף שבוע הגיע — אל תשכח לנצל!`
+      : `כל הפתקים מומשו החודש. שבוע טוב! 🎉`;
+    sendPushNotification('🍽️ תזכורת שבועית', body, '🍽️');
+    fired = true;
+  }
+
+  // Last work day of month
+  if (!fired && s.monthend && remaining > 0) {
+    const isLastWorkDay = (() => {
+      let d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      while (d.getDay() === 5 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+      return d.getDate() === now.getDate();
+    })();
+    if (isLastWorkDay) {
+      const remStr = isCard ? fmt(remaining) : `${remaining} פתקים`;
+      sendPushNotification('⚠️ יום עבודה אחרון בחודש!', `נשארו לך ${remStr} שיתאפסו מחר! מהר לנצל.`, '⚠️');
+      fired = true;
+    }
+  }
+
+  if (fired) localStorage.setItem(firedKey, '1');
+}
+
+// ============ PRODUCT TOUR ============
+const TOUR_KEY = 'product_tour_done_v1';
+
+const TOUR_STEPS = [
+  {
+    title: 'ברוך הבא למחשבון שכר! 🎉',
+    body: 'זהו מדריך קצר שיעביר אותך על כל הפיצרים העיקריים באפליקציה. לחץ "הבא" להמשיך.',
+    target: null,
+    tab: null,
+    position: 'center'
+  },
+  {
+    title: '🕐 שעות עבודה',
+    body: 'כאן אתה מזין כמה שעות עבדת כל יום. ניתן גם להשתמש בשעון כניסה/יציאה לחישוב אוטומטי.',
+    target: '[data-tab="hours"]',
+    tab: 'hours',
+    position: 'above'
+  },
+  {
+    title: '⏰ שעון כניסה ויציאה',
+    body: 'לחץ "כניסה" בבוקר ו"יציאה" בסוף יום — האפליקציה תחשב את השעות אוטומטית ותזכור אותן.',
+    target: '#clockWidget',
+    tab: 'hours',
+    position: 'below'
+  },
+  {
+    title: '💰 הגדרת שכר',
+    body: 'הכנס את השכר הברוטו שלך, תוספות ונקודות זיכוי. האפליקציה תחשב את השכר נטו המדויק.',
+    target: '[data-tab="input"]',
+    tab: 'input',
+    position: 'above'
+  },
+  {
+    title: '🍽️ הטבת ארוחות',
+    body: 'עקוב אחרי פתקי אוכל, סיבוס או תן ביס. האפליקציה מחשבת כמה פתקים מגיע לך לפי ימי העבודה.',
+    target: '[data-tab="tickets"]',
+    tab: 'tickets',
+    position: 'above'
+  },
+  {
+    title: '📊 דשבורד שכר',
+    body: 'תצוגה ויזואלית של כל הנתונים — גרף פאי של הניכויים, היסטוריית שכר ומגמות לאורך זמן.',
+    target: '[data-tab="dashboard"]',
+    tab: 'dashboard',
+    position: 'above'
+  },
+  {
+    title: '📋 ניכויים ומיסים',
+    body: 'פירוט מלא של מס הכנסה, ביטוח לאומי, מס בריאות ופנסיה — עם הסבר על כל ניכוי.',
+    target: '[data-tab="deductions"]',
+    tab: 'deductions',
+    position: 'above'
+  },
+  {
+    title: '📤 ייצוא נתונים',
+    body: 'שמור תלוש שכר PDF, קובץ Excel מפורט, או שתף את הנתונים. גם ניתן לגבות ולשחזר הכל.',
+    target: '[data-tab="export"]',
+    tab: 'export',
+    position: 'above'
+  },
+  {
+    title: '🔔 התראות Push',
+    body: 'אפשר התראות כדי לקבל תזכורות על פתקי אוכל גם כשהאפליקציה סגורה — בכל יום חמישי ובסוף חודש.',
+    target: '#notifSettingsSection',
+    tab: 'export',
+    position: 'above'
+  },
+  {
+    title: '🎓 המדריך תמיד זמין!',
+    body: 'כפתור "מדריך" בפינה הימנית של הכותרת זמין תמיד. לחץ עליו בכל עת להפעיל מחדש את המדריך.',
+    target: '#guideFab',
+    tab: null,
+    position: 'below'
+  }
+];
+
+let _tourStep = 0;
+let _tourActive = false;
+
+function startProductTour(fromStep) {
+  _tourStep = fromStep || 0;
+  _tourActive = true;
+  renderTourStep();
+}
+
+function endProductTour() {
+  _tourActive = false;
+  localStorage.setItem(TOUR_KEY, '1');
+  removeTourUI();
+}
+
+function removeTourUI() {
+  const bd = document.getElementById('tour-backdrop');
+  const tt = document.getElementById('tour-tooltip');
+  if (bd) { bd.style.opacity = '0'; setTimeout(() => bd.remove(), 300); }
+  if (tt) { tt.style.opacity = '0'; setTimeout(() => tt.remove(), 300); }
+}
+
+function renderTourStep() {
+  removeTourUI();
+  if (_tourStep >= TOUR_STEPS.length) { endProductTour(); showToast('🎓 סיימת את המדריך! אתה מוכן.'); return; }
+
+  const step = TOUR_STEPS[_tourStep];
+
+  // Switch to the right tab first
+  if (step.tab) {
+    showTab(step.tab);
+  }
+
+  // Small delay to allow tab render
+  setTimeout(() => {
+    const totalSteps = TOUR_STEPS.length;
+
+    // Build progress pips
+    let pips = '';
+    for (let i = 0; i < totalSteps; i++) {
+      const cls = i < _tourStep ? 'tour-pip done' : (i === _tourStep ? 'tour-pip active' : 'tour-pip');
+      pips += `<div class="${cls}"></div>`;
+    }
+
+    // Build tooltip
+    const tt = document.createElement('div');
+    tt.id = 'tour-tooltip';
+    tt.className = 'tour-tooltip';
+    tt.style.opacity = '0';
+    tt.innerHTML = `
+      <div class="tour-progress">${pips}</div>
+      <div class="tour-step-badge">
+        <span>שלב ${_tourStep + 1} מתוך ${totalSteps}</span>
+      </div>
+      <div class="tour-title">${step.title}</div>
+      <div class="tour-body">${step.body}</div>
+      <div class="tour-actions">
+        <button class="tour-btn-skip" onclick="endProductTour()">סגור</button>
+        <button class="tour-btn-next" onclick="advanceTour()">
+          ${_tourStep < totalSteps - 1 ? 'הבא ←' : 'סיום! 🎉'}
+        </button>
+      </div>
+    `;
+    document.body.appendChild(tt);
+
+    // Position tooltip and spotlight
+    if (step.target && step.position !== 'center') {
+      const el = document.querySelector(step.target);
+      if (el) {
+        // Create spotlight backdrop
+        const bd = document.createElement('div');
+        bd.id = 'tour-backdrop';
+        bd.className = 'tour-backdrop';
+        bd.style.opacity = '0';
+        bd.style.transition = 'opacity 0.3s';
+        document.body.insertBefore(bd, tt);
+
+        const rect = el.getBoundingClientRect();
+        const pad = 8;
+        const sp = document.createElement('div');
+        sp.className = 'tour-spotlight';
+        sp.style.cssText = `
+          top:${rect.top - pad}px;
+          left:${rect.left - pad}px;
+          width:${rect.width + pad * 2}px;
+          height:${rect.height + pad * 2}px;
+        `;
+        bd.appendChild(sp);
+
+        // Position tooltip relative to element
+        const vpW = window.innerWidth;
+        const vpH = window.innerHeight;
+        const ttW = Math.min(320, vpW - 32);
+
+        // Default: place tooltip below the element
+        let top, left;
+        const ttEstH = 200;
+
+        if (step.position === 'above') {
+          top = rect.top - ttEstH - pad - 16;
+          if (top < 60) top = rect.bottom + pad + 16;
+        } else {
+          top = rect.bottom + pad + 16;
+          if (top + ttEstH > vpH - 20) top = rect.top - ttEstH - pad - 16;
+        }
+        // Clamp top
+        top = Math.max(60, Math.min(top, vpH - ttEstH - 20));
+
+        // Center horizontally relative to element but stay in bounds
+        left = rect.left + rect.width / 2 - ttW / 2;
+        left = Math.max(16, Math.min(left, vpW - ttW - 16));
+
+        tt.style.cssText += `top:${top}px;left:${left}px;width:${ttW}px;`;
+
+        // Scroll element into view
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        requestAnimationFrame(() => {
+          bd.style.opacity = '1';
+          tt.style.opacity = '1';
+        });
+        return;
+      }
+    }
+
+    // Center position (no spotlight)
+    tt.style.cssText += `
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      max-width:340px;
+    `;
+    requestAnimationFrame(() => { tt.style.opacity = '1'; });
+  }, step.tab ? 200 : 50);
+}
+
+function advanceTour() {
+  _tourStep++;
+  renderTourStep();
+}
+
+// Expose to global
+window.startProductTour = startProductTour;
+window.advanceTour = advanceTour;
+window.endProductTour = endProductTour;
+
+// Init notifications on load
+function initPushNotifications() {
+  initNotifSettingsUI();
+  // Check if we should fire scheduled notifications
+  setTimeout(checkAndFireScheduledNotifications, 2000);
+}
+
+
 function safeFmt(n) {
   if (n === undefined || n === null || isNaN(n)) return '₪0';
   return '₪' + Math.round(n).toLocaleString('he-IL');
@@ -6185,6 +6744,7 @@ setTimeout(() => {
   setupPullToRefresh();
   setupSwipeCalendar();
   setupOfflineDetection();
+  initPushNotifications();
   // Hide splash screen
   setTimeout(() => hideSplash(), 1400);
   // Show onboarding for new users, or what's new for returning users
