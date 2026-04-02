@@ -1127,6 +1127,48 @@
   .tour-pip.done { background: var(--green); }
 
   /* ===== PUSH NOTIFICATION SETTINGS ===== */
+  .notif-freq-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: right;
+    font-family: 'Heebo', sans-serif;
+    transition: all 0.18s;
+    width: 100%;
+  }
+  .notif-freq-btn.active {
+    border-color: var(--accent);
+    background: rgba(79,142,247,0.1);
+  }
+  .notif-freq-icon { font-size: 22px; flex-shrink: 0; }
+  .notif-freq-title { font-size: 14px; font-weight: 800; color: var(--text); }
+  .notif-freq-btn.active .notif-freq-title { color: var(--accent); }
+  .notif-freq-desc { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  .notif-day-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 800;
+    font-family: 'Heebo', sans-serif;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .notif-day-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(79,142,247,0.4);
+  }
   .notif-toggle-row {
     display: flex;
     align-items: center;
@@ -2321,6 +2363,8 @@
           <div class="section-sub">קבל תזכורות גם כשהאפליקציה סגורה</div>
         </div>
       </div>
+
+      <!-- Permission banners -->
       <div id="notifPermissionBanner" style="display:none;background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(79,142,247,0.08));border:1.5px solid rgba(124,92,252,0.3);border-radius:14px;padding:14px 16px;margin-bottom:14px">
         <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px">🔔 אפשר התראות</div>
         <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">כדי לקבל תזכורות על פתקי אוכל ויתרות גם כשהאפליקציה סגורה, יש לאשר קבלת התראות.</div>
@@ -2332,44 +2376,90 @@
       <div id="notifEnabledBanner" style="display:none;background:rgba(34,209,122,0.08);border:1.5px solid rgba(34,209,122,0.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--green);font-weight:700">
         ✅ התראות מופעלות — תקבל תזכורות גם כשהאפליקציה סגורה
       </div>
+
       <div id="notifToggles">
-        <div class="notif-toggle-row">
-          <div>
-            <div class="notif-toggle-label">תזכורת יום חמישי</div>
-            <div class="notif-toggle-sub">תזכורת שבועית על יתרת פתקים/ארוחות</div>
+
+        <!-- Frequency selector -->
+        <div style="margin-bottom:14px">
+          <div class="notif-toggle-label" style="margin-bottom:10px">תדירות התזכורות</div>
+          <div style="display:flex;flex-direction:column;gap:8px" id="notifFreqBtns">
+            <button class="notif-freq-btn active" data-freq="specific" onclick="setNotifFreq('specific')">
+              <span class="notif-freq-icon">📅</span>
+              <div>
+                <div class="notif-freq-title">ימים ספציפיים</div>
+                <div class="notif-freq-desc">בחר אילו ימים בשבוע לקבל תזכורת</div>
+              </div>
+            </button>
+            <button class="notif-freq-btn" data-freq="daily" onclick="setNotifFreq('daily')">
+              <span class="notif-freq-icon">🔁</span>
+              <div>
+                <div class="notif-freq-title">כל יום</div>
+                <div class="notif-freq-desc">תזכורת יומית בשעה שתבחר</div>
+              </div>
+            </button>
+            <button class="notif-freq-btn" data-freq="monthend" onclick="setNotifFreq('monthend')">
+              <span class="notif-freq-icon">📆</span>
+              <div>
+                <div class="notif-freq-title">סוף חודש בלבד</div>
+                <div class="notif-freq-desc">רק ביום העבודה האחרון של החודש</div>
+              </div>
+            </button>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="notif-thursday" checked onchange="saveNotifSettings()">
-            <div class="toggle-track"></div>
-          </label>
         </div>
-        <div class="notif-toggle-row">
+
+        <!-- Day picker (shown only for 'specific') -->
+        <div id="notifDayPicker" style="margin-bottom:14px">
+          <div class="notif-toggle-label" style="margin-bottom:8px">ימי התזכורת</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="notif-day-btn" data-day="0" onclick="toggleNotifDay(0)">א׳</button>
+            <button class="notif-day-btn" data-day="1" onclick="toggleNotifDay(1)">ב׳</button>
+            <button class="notif-day-btn" data-day="2" onclick="toggleNotifDay(2)">ג׳</button>
+            <button class="notif-day-btn" data-day="3" onclick="toggleNotifDay(3)">ד׳</button>
+            <button class="notif-day-btn active" data-day="4" onclick="toggleNotifDay(4)">ה׳</button>
+            <button class="notif-day-btn" data-day="5" onclick="toggleNotifDay(5)" style="opacity:0.4;pointer-events:none">ו׳</button>
+            <button class="notif-day-btn" data-day="6" onclick="toggleNotifDay(6)" style="opacity:0.4;pointer-events:none">ש׳</button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">שישי ושבת לא זמינים (סוף שבוע)</div>
+        </div>
+
+        <!-- Also notify on last work day of month toggle -->
+        <div class="notif-toggle-row" id="notifMonthendRow">
           <div>
-            <div class="notif-toggle-label">יום עבודה אחרון בחודש</div>
-            <div class="notif-toggle-sub">תזכורת לפני שהיתרה מתאפסת</div>
+            <div class="notif-toggle-label">גם ביום עבודה אחרון בחודש</div>
+            <div class="notif-toggle-sub">תזכורת נוספת לפני שהיתרה מתאפסת</div>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="notif-monthend" checked onchange="saveNotifSettings()">
             <div class="toggle-track"></div>
           </label>
         </div>
+
+        <!-- Time picker -->
         <div class="notif-toggle-row">
           <div>
-            <div class="notif-toggle-label">שעת התזכורת</div>
+            <div class="notif-toggle-label">שעת ההתראה</div>
             <div class="notif-toggle-sub">מתי לשלוח את ההתראה</div>
           </div>
           <select id="notif-hour" onchange="saveNotifSettings()" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;font-weight:700">
+            <option value="7">07:00</option>
             <option value="8">08:00</option>
             <option value="9">09:00</option>
             <option value="10" selected>10:00</option>
             <option value="11">11:00</option>
             <option value="12">12:00</option>
             <option value="13">13:00</option>
+            <option value="14">14:00</option>
+            <option value="15">15:00</option>
+            <option value="16">16:00</option>
+            <option value="17">17:00</option>
+            <option value="18">18:00</option>
           </select>
         </div>
-        <div style="margin-top:10px">
-          <button onclick="sendTestNotification()" style="width:100%;padding:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;font-family:'Heebo',sans-serif;cursor:pointer">📤 שלח התראת בדיקה</button>
-        </div>
+
+        <!-- Summary chip -->
+        <div id="notifSummaryChip" style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);border-radius:10px;padding:8px 12px;margin:10px 0;font-size:12px;color:var(--accent);font-weight:700;text-align:center"></div>
+
+        <button onclick="sendTestNotification()" style="width:100%;padding:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:700;font-family:'Heebo',sans-serif;cursor:pointer;margin-top:4px">📤 שלח התראת בדיקה</button>
       </div>
     </div>
 
@@ -5369,34 +5459,106 @@ function rateApp(action) {
 
 
 // ============ PUSH NOTIFICATIONS ============
-const NOTIF_SETTINGS_KEY = 'push_notif_settings_v1';
+const NOTIF_SETTINGS_KEY = 'push_notif_settings_v2';
+
+const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const DAY_LABELS = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 
 function loadNotifSettings() {
   try {
     const raw = localStorage.getItem(NOTIF_SETTINGS_KEY);
-    return raw ? JSON.parse(raw) : { thursday: true, monthend: true, hour: 10 };
-  } catch(e) { return { thursday: true, monthend: true, hour: 10 }; }
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { freq: 'specific', days: [4], monthend: true, hour: 10 };
 }
 
 function saveNotifSettings() {
-  const s = {
-    thursday: document.getElementById('notif-thursday')?.checked ?? true,
-    monthend: document.getElementById('notif-monthend')?.checked ?? true,
-    hour: parseInt(document.getElementById('notif-hour')?.value || '10')
-  };
+  const s = loadNotifSettings();
+  s.monthend = document.getElementById('notif-monthend')?.checked ?? true;
+  s.hour = parseInt(document.getElementById('notif-hour')?.value || '10');
+  // days and freq are kept from window._notifState
+  s.freq = window._notifFreq || s.freq;
+  s.days = window._notifDays || s.days;
   localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(s));
-  // Reschedule after save
   scheduleAllPushNotifications();
+  updateNotifSummaryChip(s);
+}
+
+function setNotifFreq(freq) {
+  window._notifFreq = freq;
+  // Update button styles
+  document.querySelectorAll('.notif-freq-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.freq === freq);
+  });
+  // Show/hide day picker
+  const dp = document.getElementById('notifDayPicker');
+  const mr = document.getElementById('notifMonthendRow');
+  if (dp) dp.style.display = freq === 'specific' ? 'block' : 'none';
+  if (mr) mr.style.display = freq === 'monthend' ? 'none' : 'block';
+  saveNotifSettings();
+}
+
+function toggleNotifDay(day) {
+  if (!window._notifDays) window._notifDays = [4];
+  const idx = window._notifDays.indexOf(day);
+  if (idx === -1) {
+    window._notifDays.push(day);
+  } else {
+    if (window._notifDays.length === 1) { showToast('⚠️ חייב לבחור לפחות יום אחד'); return; }
+    window._notifDays.splice(idx, 1);
+  }
+  // Update button styles
+  document.querySelectorAll('.notif-day-btn').forEach(b => {
+    const d = parseInt(b.dataset.day);
+    b.classList.toggle('active', window._notifDays.includes(d));
+  });
+  saveNotifSettings();
+}
+
+function updateNotifSummaryChip(s) {
+  const chip = document.getElementById('notifSummaryChip');
+  if (!chip) return;
+  let text = '';
+  const timeStr = `${String(s.hour).padStart(2,'0')}:00`;
+  if (s.freq === 'daily') {
+    text = `🔁 כל יום בשעה ${timeStr}`;
+  } else if (s.freq === 'monthend') {
+    text = `📆 ביום עבודה אחרון של החודש בשעה ${timeStr}`;
+  } else {
+    const dayStr = (s.days || [4]).sort((a,b)=>a-b).map(d => DAY_NAMES[d]).join(', ');
+    text = `📅 ${dayStr} בשעה ${timeStr}`;
+    if (s.monthend) text += ' + סוף חודש';
+  }
+  chip.textContent = text;
 }
 
 function initNotifSettingsUI() {
   const s = loadNotifSettings();
-  const th = document.getElementById('notif-thursday');
+  window._notifFreq = s.freq || 'specific';
+  window._notifDays = s.days || [4];
+
+  // Restore freq buttons
+  document.querySelectorAll('.notif-freq-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.freq === window._notifFreq);
+  });
+  // Restore day buttons
+  document.querySelectorAll('.notif-day-btn').forEach(b => {
+    const d = parseInt(b.dataset.day);
+    b.classList.toggle('active', window._notifDays.includes(d));
+  });
+  // Restore toggles
   const me = document.getElementById('notif-monthend');
   const hr = document.getElementById('notif-hour');
-  if (th) th.checked = s.thursday;
-  if (me) me.checked = s.monthend;
-  if (hr) hr.value = s.hour;
+  if (me) me.checked = s.monthend ?? true;
+  if (hr) hr.value = s.hour ?? 10;
+
+  // Show/hide day picker
+  const dp = document.getElementById('notifDayPicker');
+  const mr = document.getElementById('notifMonthendRow');
+  if (dp) dp.style.display = window._notifFreq === 'specific' ? 'block' : 'none';
+  if (mr) mr.style.display = window._notifFreq === 'monthend' ? 'none' : 'block';
+
+  updateNotifSummaryChip(s);
   updateNotifPermissionUI();
 }
 
@@ -5407,7 +5569,6 @@ function updateNotifPermissionUI() {
   const toggles = document.getElementById('notifToggles');
   if (!permBanner) return;
 
-  const perm = Notification?.permission;
   permBanner.style.display = 'none';
   blockedBanner.style.display = 'none';
   enabledBanner.style.display = 'none';
@@ -5417,6 +5578,7 @@ function updateNotifPermissionUI() {
     blockedBanner.textContent = '⚠️ הדפדפן שלך לא תומך בהתראות Push.';
     return;
   }
+  const perm = Notification.permission;
   if (perm === 'denied') {
     blockedBanner.style.display = 'block';
   } else if (perm === 'granted') {
@@ -5428,19 +5590,13 @@ function updateNotifPermissionUI() {
 }
 
 async function requestPushPermission() {
-  if (!('Notification' in window)) {
-    showToast('⚠️ הדפדפן שלך לא תומך בהתראות');
-    return;
-  }
+  if (!('Notification' in window)) { showToast('⚠️ הדפדפן שלך לא תומך בהתראות'); return; }
   const result = await Notification.requestPermission();
   updateNotifPermissionUI();
   if (result === 'granted') {
     showToast('✅ התראות הופעלו!');
     scheduleAllPushNotifications();
-    // Send welcome notification
-    setTimeout(() => {
-      sendPushNotification('🎉 התראות הופעלו!', 'תקבל/י תזכורות על פתקי אוכל ויתרות גם כשהאפליקציה סגורה.', '🔔');
-    }, 800);
+    setTimeout(() => sendPushNotification('🎉 התראות הופעלו!', 'תקבל/י תזכורות לפי ההגדרות שבחרת.', '🔔'), 800);
   } else if (result === 'denied') {
     showToast('⚠️ ההתראות נחסמו. ניתן לשנות בהגדרות הדפדפן.');
   }
@@ -5451,28 +5607,17 @@ function sendPushNotification(title, body, icon) {
   try {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title,
-        body,
-        icon: icon || '🔔',
-        tag: 'salary-reminder-' + Date.now()
+        type: 'SHOW_NOTIFICATION', title, body,
+        icon: icon || '🔔', tag: 'salary-reminder-' + Date.now()
       });
     } else {
-      new Notification(title, {
-        body,
-        icon: './icon192.png',
-        badge: './icon192.png',
-        tag: 'salary-reminder'
-      });
+      new Notification(title, { body, icon: './icon192.png', badge: './icon192.png', tag: 'salary-reminder' });
     }
   } catch(e) { console.log('Notification error:', e); }
 }
 
 function sendTestNotification() {
-  if (Notification?.permission !== 'granted') {
-    requestPushPermission();
-    return;
-  }
+  if (Notification?.permission !== 'granted') { requestPushPermission(); return; }
   const remaining = getTicketsRemaining();
   const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
   const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
@@ -5485,58 +5630,63 @@ function sendTestNotification() {
   showToast('📤 נשלחה התראת בדיקה!');
 }
 
-// Schedule push notifications using alarms via SW messaging
 function scheduleAllPushNotifications() {
   if (Notification?.permission !== 'granted') return;
   const s = loadNotifSettings();
-  // Store schedule in localStorage so SW can check on next launch
-  const schedule = { thursday: s.thursday, monthend: s.monthend, hour: s.hour };
-  localStorage.setItem('push_schedule', JSON.stringify(schedule));
+  localStorage.setItem('push_schedule', JSON.stringify(s));
 }
 
-// Called on app load — checks if we should fire a push notification now
 function checkAndFireScheduledNotifications() {
   if (Notification?.permission !== 'granted') return;
   const raw = localStorage.getItem('push_schedule');
   if (!raw) return;
-  let s;
-  try { s = JSON.parse(raw); } catch(e) { return; }
+  let s; try { s = JSON.parse(raw); } catch(e) { return; }
 
   const now = new Date();
-  const dow = now.getDay();
+  const dow = now.getDay(); // 0=sun … 6=sat
   const hr = now.getHours();
   const todayKey = now.toISOString().slice(0, 10);
   const firedKey = 'push_fired_' + todayKey;
-  if (localStorage.getItem(firedKey)) return; // already fired today
+  if (localStorage.getItem(firedKey)) return;
 
   const targetHour = s.hour ?? 10;
-  if (hr < targetHour) return; // not time yet
+  if (hr < targetHour) return;
 
   const remaining = getTicketsRemaining();
   const isCard = MEAL_TYPE_CONFIG[state.mealType]?.mode === 'card';
   const typeName = getMealTypeName();
   const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
-
+  const freq = s.freq || 'specific';
   let fired = false;
 
-  // Thursday reminder
-  if (s.thursday && dow === 4) {
+  // Should we fire a regular reminder today?
+  let fireRegular = false;
+  if (freq === 'daily') {
+    fireRegular = true;
+  } else if (freq === 'specific') {
+    fireRegular = (s.days || [4]).includes(dow);
+  }
+  // monthend-only: skip regular
+
+  if (fireRegular) {
     const remStr = isCard ? fmt(remaining) : `${remaining} פתקים`;
+    const isWeekend = dow === 4; // Thursday
     const body = remaining > 0
-      ? `נשארו לך ${remStr} ב${typeName}. סוף שבוע הגיע — אל תשכח לנצל!`
-      : `כל הפתקים מומשו החודש. שבוע טוב! 🎉`;
-    sendPushNotification('🍽️ תזכורת שבועית', body, '🍽️');
+      ? `נשארו לך ${remStr} ב${typeName}.${isWeekend ? ' סוף שבוע הגיע — אל תשכח לנצל!' : ' אל תשכח לנצל!'}`
+      : `כל הפתקים מומשו החודש. כל הכבוד! 🎉`;
+    sendPushNotification('🍽️ תזכורת ארוחות', body, '🍽️');
     fired = true;
   }
 
   // Last work day of month
-  if (!fired && s.monthend && remaining > 0) {
+  const checkMonthend = freq === 'monthend' || (freq !== 'daily' && (s.monthend ?? true));
+  if (checkMonthend && remaining > 0) {
     const isLastWorkDay = (() => {
       let d = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       while (d.getDay() === 5 || d.getDay() === 6) d.setDate(d.getDate() - 1);
       return d.getDate() === now.getDate();
     })();
-    if (isLastWorkDay) {
+    if (isLastWorkDay && !fired) {
       const remStr = isCard ? fmt(remaining) : `${remaining} פתקים`;
       sendPushNotification('⚠️ יום עבודה אחרון בחודש!', `נשארו לך ${remStr} שיתאפסו מחר! מהר לנצל.`, '⚠️');
       fired = true;
