@@ -2290,7 +2290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const STORAGE_KEY = 'salary_app_v1';
 
 function saveAll() {
-  const inputs = ['baseSalary','hourlyRate','travel','overtime','bonus','other','sickDays','unpaidDays',
+  const inputs = ['baseSalary','hourlyRate','travel','overtime','bonus','other',
     'creditPoints','gender','numChildren','pensionEmployee','pensionEmployer',
     'trainingFund','trainingFundEmployer','extraDeduction','holidayDays','vacationDays','salaryType','taxYear'];
   const formData = {};
@@ -2388,6 +2388,7 @@ function autoSave() {
 function init() {
   loadAll();
   setupMonthLabel();
+  syncAbsenceToInputs(); // sync sick/unpaid from current month calendar data
   setupTaxBrackets();
   setupGenderChange();
   onSalaryTypeChange(); // restore hourly/monthly UI
@@ -2586,7 +2587,9 @@ function changeMonth(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderHoursCalendar();
+  syncAbsenceToInputs(); // sync sick/unpaid days for the new month
   updateMealDisplay();
+  calculate(); // recalculate for the new month
 }
 
 function renderHoursCalendar() {
@@ -2861,12 +2864,12 @@ function countAbsenceDays() {
 
 function syncAbsenceToInputs() {
   const { sick, unpaid } = countAbsenceDays();
-  // Add to manually entered values
   const sickEl = document.getElementById('sickDays');
   const unpaidEl = document.getElementById('unpaidDays');
-  // Only sync from calendar (don't override manual)
-  if (sickEl && !sickEl._manualEdit) sickEl.value = sick || '';
-  if (unpaidEl && !unpaidEl._manualEdit) unpaidEl.value = unpaid || '';
+  // Always sync from calendar — these values are derived, not manually saved
+  if (sickEl) sickEl.value = sick || '';
+  if (unpaidEl) unpaidEl.value = unpaid || '';
+  updateAbsenceInfo();
 }
 
 function updateAbsenceInfo() {
