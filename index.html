@@ -2105,6 +2105,17 @@
   <div id="tab-export" class="page">
     <div class="section">
       <div class="section-header">
+        <div class="section-icon" style="background:rgba(79,142,247,0.15)">📅</div>
+        <div>
+          <div class="section-title">בחר חודש לייצוא</div>
+          <div class="section-sub">נקודה ירוקה = יש נתוני שעות</div>
+        </div>
+      </div>
+      <div id="exportMonthChips"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
         <div class="section-icon" style="background:rgba(79,142,247,0.15)">📤</div>
         <div>
           <div class="section-title">ייצוא נתונים</div>
@@ -2228,6 +2239,58 @@ const state = {
   mealSpendingHistory: [], // [{date, amount, month}]
   result: null
 };
+
+// Export month selector — defaults to current viewed month
+let exportYear, exportMonth;
+function initExportMonth() {
+  exportYear = calYear;
+  exportMonth = calMonth;
+}
+function setExportMonth(m, y) {
+  exportMonth = m;
+  exportYear = y || calYear;
+  renderExportMonthChips();
+  // Recalculate with the selected export month's data
+  recalcForExportMonth();
+}
+function recalcForExportMonth() {
+  // Temporarily switch calMonth/calYear, calculate, then restore
+  const origMonth = calMonth, origYear = calYear;
+  calMonth = exportMonth;
+  calYear = exportYear;
+  syncAbsenceToInputs();
+  calculate();
+  calMonth = origMonth;
+  calYear = origYear;
+  syncAbsenceToInputs(); // restore current month inputs
+}
+function renderExportMonthChips() {
+  const container = document.getElementById('exportMonthChips');
+  if (!container) return;
+  const months = ['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
+  // Year selector
+  let html = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+  html += `<button onclick="setExportYear(exportYear-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer">‹</button>`;
+  html += `<span style="font-size:14px;font-weight:700;color:var(--text);min-width:50px;text-align:center">${exportYear}</span>`;
+  html += `<button onclick="setExportYear(exportYear+1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer">›</button>`;
+  html += '</div>';
+  // Month chips
+  html += '<div class="month-tabs">';
+  months.forEach((m, i) => {
+    const isActive = i === exportMonth;
+    const hasData = state.monthHours[`${exportYear}-${i}`] && Object.keys(state.monthHours[`${exportYear}-${i}`]).some(d => state.monthHours[`${exportYear}-${i}`][d] > 0);
+    const dotStyle = hasData ? 'display:block;width:4px;height:4px;border-radius:50%;background:var(--green);margin:2px auto 0' : 'display:none';
+    html += `<button class="month-chip${i === exportMonth ? ' active' : ''}" onclick="setExportMonth(${i}, ${exportYear})" style="text-align:center;${hasData && i !== exportMonth ? 'border-color:rgba(34,209,122,0.4)' : ''}">
+      ${m}<div style="${dotStyle}"></div>
+    </button>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+function setExportYear(y) {
+  exportYear = y;
+  renderExportMonthChips();
+}
 
 // ============ GLOBAL ERROR HANDLER ============
 window.onerror = function(msg, url, line, col, err) {
@@ -2401,7 +2464,7 @@ function init() {
     });
   });
   // Initial calculation on load (once, from saved data)
-  setTimeout(() => calculate(), 200);
+  setTimeout(() => { calculate(); initExportMonth(); }, 200);
 }
 
 // ============ CREDIT POINTS — גיל ילדים ============
@@ -3104,7 +3167,11 @@ function showTab(name) {
     navItem.classList.add('active');
     navItem.setAttribute('aria-selected', 'true');
   }
-  if (name === 'export' && state.result) updateExportPreview();
+  if (name === 'export') {
+    initExportMonth();
+    renderExportMonthChips();
+    if (state.result) updateExportPreview();
+  }
   if (name === 'dashboard') { calculate(); }
   if (name === 'hours') { updateQuickSummary(); }
   // Scroll to top on tab change
@@ -3604,10 +3671,13 @@ function getExportText() {
   const r = state.result;
   const fmt = n => '₪' + Math.round(n).toLocaleString('he-IL');
   const now = new Date().toLocaleDateString('he-IL');
+  const monthNames = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const mLabel = monthNames[exportMonth] + ' ' + exportYear;
   return `
 =============================
      תלוש שכר מקוצר
-     ${now}
+     ${mLabel}
+     הופק: ${now}
 =============================
 
 שכר ברוטו:          ${fmt(r.grossTotal)}
@@ -3641,6 +3711,7 @@ function getExportText() {
 }
 
 function updateExportPreview() {
+  recalcForExportMonth();
   document.getElementById('exportText').textContent = getExportText();
 }
 
@@ -3657,6 +3728,7 @@ async function exportExcel() {
   if (typeof ExcelJS === 'undefined') { showToast('⚠️ שגיאה בטעינה'); return; }
 
   try {
+  recalcForExportMonth(); // calculate for selected export month
   const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
   const allDayNames = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   const r = state.result;
@@ -3700,7 +3772,7 @@ async function exportExcel() {
 
   // Info row
   ws1.mergeCells('A2:C2');
-  ws1.getCell('A2').value = `חודש: ${months[calMonth]} ${calYear}`;
+  ws1.getCell('A2').value = `חודש: ${months[exportMonth]} ${exportYear}`;
   ws1.getCell('A2').font = { bold: true, size: 11, color: { argb: DARK_BLUE } };
   ws1.mergeCells('D2:F2');
   ws1.getCell('D2').value = `הופק: ${new Date().toLocaleDateString('he-IL')}`;
@@ -3805,7 +3877,7 @@ async function exportExcel() {
     // Title
     ws2.mergeCells('A1:C1');
     const t2 = ws2.getCell('A1');
-    t2.value = `תלוש שכר — ${months[calMonth]} ${calYear}`;
+    t2.value = `תלוש שכר — ${months[exportMonth]} ${exportYear}`;
     t2.font = { bold: true, size: 16, color: { argb: WHITE } };
     t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BLUE } };
     t2.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -3850,7 +3922,7 @@ async function exportExcel() {
       tr.height = 26;
     }
 
-    const key0 = `${calYear}-${calMonth}`;
+    const key0 = `${exportYear}-${exportMonth}`;
     const workDays = Object.keys(state.monthHours[key0]||{}).filter(d=>(state.monthHours[key0][d]||0)>0).length;
     const totalHrs = Object.values(state.monthHours[key0]||{}).reduce((s,h)=>s+(h>0?h:0),0);
 
@@ -3938,7 +4010,7 @@ async function exportExcel() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `דוח_שכר_${months[calMonth]}_${calYear}.xlsx`;
+  a.download = `דוח_שכר_${months[exportMonth]}_${exportYear}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('📗 דוח אקסל מעוצב הורד!');
@@ -3948,6 +4020,7 @@ async function exportExcel() {
 // ============ PDF PAYSLIP ============
 async function exportPayslipPDF() {
   if (!state.result) { showToast('⚠️ יש לחשב שכר תחילה'); return; }
+  recalcForExportMonth(); // calculate for selected export month
   try {
     if (!window.jspdf) {
       showToast('📦 טוען ספריית PDF...');
@@ -3974,7 +4047,7 @@ async function exportPayslipPDF() {
     doc.setFontSize(16);
     doc.text('Salary Payslip',rx(15),13,{align:'right'});
     doc.setFontSize(10);
-    doc.text(monthsHe[calMonth]+' '+calYear,rx(15),22,{align:'right'});
+    doc.text(monthsHe[exportMonth]+' '+exportYear,rx(15),22,{align:'right'});
     doc.setFontSize(8);
     doc.text(new Date().toLocaleDateString('he-IL'),15,13);
     doc.text('Salary Calculator v2.0',15,20);
@@ -4075,15 +4148,15 @@ async function exportPayslipPDF() {
     doc.rect(0,0,pw,20,'F');
     doc.setTextColor(255,255,255);
     doc.setFontSize(12);
-    doc.text('Hours Detail - '+monthsHe[calMonth]+' '+calYear,rx(15),13,{align:'right'});
+    doc.text('Hours Detail - '+monthsHe[exportMonth]+' '+exportYear,rx(15),13,{align:'right'});
     y=28;
 
-    const key0=`${calYear}-${calMonth}`;
+    const key0=`${exportYear}-${exportMonth}`;
     const hMap=state.monthHours[key0]||{};
     const tMap=(state.dayTimes&&state.dayTimes[key0])||{};
     const aMap=state.dayAbsence[key0]||{};
-    const fd=new Date(calYear,calMonth,1).getDay();
-    const dim=new Date(calYear,calMonth+1,0).getDate();
+    const fd=new Date(exportYear,exportMonth,1).getDay();
+    const dim=new Date(exportYear,exportMonth+1,0).getDate();
     const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     // Header row
@@ -4114,7 +4187,7 @@ async function exportPayslipPDF() {
       if(d%2===0){doc.setFillColor(248,249,252);doc.rect(15,y-3.5,pw-30,5.5,'F');}
       doc.setTextColor(ab?RED[0]:DRK[0],ab?RED[1]:DRK[1],ab?RED[2]:DRK[2]);
       doc.setFontSize(7);
-      doc.text(d+'/'+(calMonth+1),cx[0],y,{align:'right'});
+      doc.text(d+'/'+(exportMonth+1),cx[0],y,{align:'right'});
       doc.text(dn[dow],cx[1],y,{align:'right'});
       doc.text(ab||tm.entry||'',cx[2],y,{align:'right'});
       doc.text(ab?'':tm.exit||'',cx[3],y,{align:'right'});
@@ -4139,7 +4212,7 @@ async function exportPayslipPDF() {
     doc.setFontSize(6);
     doc.text('Generated by Salary Calculator v2.0 | For estimation purposes only',pw/2,ph-8,{align:'center'});
 
-    doc.save('Payslip_'+monthsEn[calMonth]+'_'+calYear+'.pdf');
+    doc.save('Payslip_'+monthsEn[exportMonth]+'_'+exportYear+'.pdf');
     showToast('📄 תלוש שכר PDF הורד!');
   } catch(err) {
     console.error('PDF error:', err);

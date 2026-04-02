@@ -1,4 +1,4 @@
-const CACHE = 'salary-app-v11';
+const CACHE = 'salary-app-v12';
 const STATIC_ASSETS = ['./index.html','./manifest.json','./icon192.png','./icon512.png'];
 const CDN_ASSETS = [
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap',
